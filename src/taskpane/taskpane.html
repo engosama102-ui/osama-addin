@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Osama Addion</title>
+  <meta charset="UTF-8"/>
+  <title>Osama Addin</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #f0f0f0; font-size: 13px; color: #333; }
@@ -54,10 +54,9 @@
     .btn-red { background: #ff4d4d; color: #fff; border: none; }
     .btn-red:hover { background: #e03d3d; }
     .btn-green { background: #28a745; color: #fff; border: none; }
-    .btn-green:hover { background: #1e8035; }
 
     .row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-    .row label { font-size: 11px; color: #666; min-width: 90px; }
+    .row label { font-size: 11px; color: #666; min-width: 80px; }
     .row input[type=range] { flex: 1; }
     .row span.val { font-size: 11px; min-width: 28px; text-align: right; }
     .row input[type=color] { width: 32px; height: 26px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; padding: 1px; }
@@ -71,6 +70,25 @@
       border-radius: 5px; cursor: pointer; background: #fafafa;
     }
     .toggle-btn.on { background: #2d6cf6; color: #fff; border-color: #2d6cf6; }
+
+    /* Font picker */
+    .font-wrap { position: relative; flex: 1; }
+    .font-input {
+      width: 100%; border: 1px solid #ddd; border-radius: 4px;
+      padding: 3px 5px; font-size: 12px;
+    }
+    .font-dropdown {
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+      background: #fff; border: 1px solid #ddd; border-radius: 6px;
+      max-height: 160px; overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: none;
+    }
+    .font-dropdown.open { display: block; }
+    .font-option {
+      padding: 6px 10px; font-size: 12px; cursor: pointer;
+    }
+    .font-option:hover { background: #eef4ff; }
 
     /* Palette */
     .palette-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
@@ -99,7 +117,7 @@
     .table-info { font-size: 11px; }
     .table-info b { font-size: 12px; display: block; margin-bottom: 2px; }
 
-    /* Paragraph Styles Library */
+    /* Style Library */
     .style-item {
       border: 1px solid #ddd; border-radius: 6px;
       padding: 7px 10px; margin-bottom: 5px;
@@ -107,7 +125,6 @@
       display: flex; justify-content: space-between; align-items: center;
     }
     .style-item:hover { background: #eef4ff; border-color: #2d6cf6; }
-    .style-preview { font-size: 13px; font-weight: bold; flex: 1; }
     .style-meta { font-size: 10px; color: #aaa; }
 
     #status {
@@ -124,16 +141,16 @@
 <body>
 
 <div class="tabs">
-  <button class="tab active" onclick="switchTab('align')">Align</button>
-  <button class="tab" onclick="switchTab('shape')">Shape</button>
+  <button class="tab active" onclick="switchTab('shapes')">Shapes</button>
   <button class="tab" onclick="switchTab('table')">Table</button>
   <button class="tab" onclick="switchTab('text')">Text</button>
   <button class="tab" onclick="switchTab('colors')">Colors</button>
   <button class="tab" onclick="switchTab('canvas')">Canvas</button>
 </div>
 
-<!-- ===== ALIGN ===== -->
-<div id="tab-align" class="panel active">
+<!-- ===== SHAPES ===== -->
+<div id="tab-shapes" class="panel active">
+
   <div class="section">
     <div class="section-title">Align to Slide</div>
     <div class="btn-grid-3">
@@ -145,59 +162,56 @@
       <button onclick="alignShapes('bottom')">⬇ Bottom</button>
     </div>
   </div>
+
   <div class="section">
-    <div class="section-title">Distribute</div>
+    <div class="section-title">Distribute & Match</div>
     <div class="btn-grid-2">
-      <button onclick="distributeShapes('h')">↔ Horizontal</button>
-      <button onclick="distributeShapes('v')">↕ Vertical</button>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title">Match Size</div>
-    <div class="btn-grid-3">
+      <button onclick="distributeShapes('h')">↔ Distribute H</button>
+      <button onclick="distributeShapes('v')">↕ Distribute V</button>
       <button onclick="matchSize('width')">= Width</button>
       <button onclick="matchSize('height')">= Height</button>
-      <button onclick="matchSize('both')">= Both</button>
+      <button onclick="matchSize('both')" style="grid-column:span 2">= Match Both</button>
     </div>
   </div>
-</div>
 
-<!-- ===== SHAPE ===== -->
-<div id="tab-shape" class="panel">
   <div class="section">
-    <div class="section-title">Round Corners</div>
+    <div class="section-title">Corner Radius</div>
     <div class="row">
       <label>Radius</label>
-      <input type="range" id="cornerSlider" min="0" max="50" value="10"
+      <input type="range" id="cornerSlider" min="0" max="50" value="0"
         oninput="document.getElementById('cornerVal').textContent=this.value">
-      <span class="val" id="cornerVal">10</span>
+      <span class="val" id="cornerVal">0</span>
     </div>
-    <button class="btn-blue" onclick="applyCornerRadius(document.getElementById('cornerSlider').value)">
-      Apply Corner Radius
-    </button>
-    <div class="hint">* Converts shape to RoundRectangle</div>
+    <div class="btn-grid-2" style="margin-top:6px">
+      <button onclick="applyCornerRadius(document.getElementById('cornerSlider').value)">Apply Radius</button>
+      <button onclick="applyCornerRadiusAll(document.getElementById('cornerSlider').value)">Apply All Shapes</button>
+    </div>
+    <div class="hint">* Apply All: applies to every shape on the slide</div>
   </div>
+
   <div class="section">
     <div class="section-title">Fill & Opacity</div>
     <div class="row">
       <label>Fill Color</label>
-      <input type="color" id="fillColor" value="#4472C4">
-      <button style="flex:1" onclick="applyFillColor(document.getElementById('fillColor').value)">Apply</button>
+      <input type="color" id="fillColor" value="#4472C4"
+        oninput="applyFillColor(this.value)">
+      <span style="font-size:11px;color:#888">Live</span>
     </div>
     <div class="row">
       <label>Opacity %</label>
       <input type="range" id="opacitySlider" min="0" max="100" value="100"
-        oninput="document.getElementById('opacityVal').textContent=this.value">
+        oninput="document.getElementById('opacityVal').textContent=this.value; applyOpacity(this.value)">
       <span class="val" id="opacityVal">100</span>
     </div>
-    <button class="btn-blue" onclick="applyOpacity(document.getElementById('opacitySlider').value)">Apply Opacity</button>
   </div>
+
   <div class="section">
     <div class="section-title">Border</div>
     <div class="row">
       <label>Color</label>
-      <input type="color" id="borderColor" value="#000000">
-      <button style="flex:1" onclick="applyBorderColor(document.getElementById('borderColor').value)">Apply</button>
+      <input type="color" id="borderColor" value="#000000"
+        oninput="applyBorderColor(this.value)">
+      <span style="font-size:11px;color:#888">Live</span>
     </div>
     <div class="row">
       <label>Width (pt)</label>
@@ -206,12 +220,14 @@
       <span class="val" id="borderVal">1</span>
     </div>
   </div>
+
   <div class="section">
     <div class="section-title">Insert SVG</div>
     <textarea id="svg-input" style="width:100%;height:70px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;padding:6px;resize:vertical;margin-top:4px" placeholder="Paste SVG code here..."></textarea>
     <button class="btn-blue" onclick="insertSVG()">Insert SVG into Slide</button>
     <div class="hint">* After insert: right-click → Convert to Shape</div>
   </div>
+
 </div>
 
 <!-- ===== TABLE ===== -->
@@ -249,16 +265,15 @@
     <div class="row">
       <label>Font Size</label>
       <input type="number" id="tblHeaderSize" value="12" min="6" max="72">
-      <span style="font-size:11px;color:#aaa">pt</span>
     </div>
     <div class="row">
-      <label>Font Name</label>
+      <label>Font</label>
       <input type="text" id="tblHeaderFont" value="Calibri">
     </div>
     <div class="toggle-row">
-      <span class="toggle-btn on" id="tblHeaderBold" onclick="toggleBtn(this)">B Bold</span>
-      <span class="toggle-btn" id="tblHeaderItalic" onclick="toggleBtn(this)">I Italic</span>
-      <span class="toggle-btn" id="tblHeaderCaps" onclick="toggleBtn(this)">AA Caps</span>
+      <span class="toggle-btn on" id="tblHeaderBold" onclick="toggleBtn(this)"><b>B</b></span>
+      <span class="toggle-btn" id="tblHeaderItalic" onclick="toggleBtn(this)"><i>I</i></span>
+      <span class="toggle-btn" id="tblHeaderCaps" onclick="toggleBtn(this)">AA</span>
     </div>
     <div class="row">
       <label>Align</label>
@@ -287,10 +302,9 @@
     <div class="row">
       <label>Font Size</label>
       <input type="number" id="tblBodySize" value="11" min="6" max="72">
-      <span style="font-size:11px;color:#aaa">pt</span>
     </div>
     <div class="row">
-      <label>Font Name</label>
+      <label>Font</label>
       <input type="text" id="tblBodyFont" value="Calibri">
     </div>
     <div class="row">
@@ -304,30 +318,17 @@
   </div>
 
   <div class="section">
-    <div class="section-title">Borders</div>
+    <div class="section-title">Borders & Padding</div>
     <div class="row">
-      <label>Color</label>
+      <label>Border Color</label>
       <input type="color" id="tblBorder" value="#cccccc">
     </div>
     <div class="row">
-      <label>Width (pt)</label>
+      <label>Border Width</label>
       <input type="range" id="tblBorderW" min="0" max="5" step="0.5" value="1"
         oninput="document.getElementById('tblBorderWVal').textContent=this.value">
       <span class="val" id="tblBorderWVal">1</span>
     </div>
-    <div class="row">
-      <label>Style</label>
-      <select id="tblBorderStyle">
-        <option value="single">Single</option>
-        <option value="thick">Thick</option>
-        <option value="double">Double</option>
-        <option value="none">None</option>
-      </select>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Padding & Spacing</div>
     <div class="row">
       <label>Cell Padding</label>
       <input type="number" id="tblPadding" value="5" min="0" max="30">
@@ -335,9 +336,7 @@
     </div>
   </div>
 
-  <button class="btn-blue" style="margin: 0 8px 6px; width: calc(100% - 16px)" onclick="createTable()">
-    ➕ Insert Table
-  </button>
+  <button class="btn-blue" style="margin: 0 0 8px; width:100%" onclick="createTable()">➕ Insert Table</button>
 
   <div class="section">
     <div class="section-title">Table Library</div>
@@ -345,44 +344,48 @@
       <button class="btn-green" onclick="saveTableStyle()">💾 Save Style</button>
       <button class="btn-red" onclick="clearTableLib()">🗑 Clear All</button>
     </div>
-    <div id="tableLibrary" style="margin-top:8px">
-      <div style="font-size:12px;color:#aaa;text-align:center;padding:10px">No saved templates</div>
-    </div>
+    <div id="tableLibrary" style="margin-top:8px"></div>
   </div>
 </div>
 
 <!-- ===== TEXT ===== -->
 <div id="tab-text" class="panel">
 
-  <!-- CHARACTER -->
   <div class="section">
     <div class="section-title">◆ Character</div>
 
     <div class="row">
       <label>Font</label>
-      <input type="text" id="txtFont" value="Calibri" placeholder="Font name">
+      <div class="font-wrap">
+        <input class="font-input" id="txtFont" type="text" value="Calibri"
+          oninput="filterFonts(this.value)" onfocus="openFontDropdown()" placeholder="Font name">
+        <div class="font-dropdown" id="fontDropdown"></div>
+      </div>
     </div>
+
     <div class="row">
       <label>Style</label>
-      <select id="txtStyle">
+      <select id="txtStyle" onchange="liveApplyChar()">
         <option value="normal">Regular</option>
         <option value="bold">Bold</option>
         <option value="italic">Italic</option>
         <option value="bolditalic">Bold Italic</option>
       </select>
     </div>
+
     <div class="row">
       <label>Size (pt)</label>
-      <input type="number" id="txtSize" value="24" min="1" max="400">
-      <label style="min-width:40px">Lead</label>
-      <input type="number" id="txtLeadingPt" value="0" min="0" max="400">
+      <input type="number" id="txtSize" value="24" min="1" max="400"
+        oninput="liveApplyChar()">
+      <label style="min-width:30px;font-size:11px">Lead</label>
+      <input type="number" id="txtLeadingPt" value="0" min="0" max="400"
+        oninput="liveApplyPara()">
     </div>
-    <div style="font-size:10px;color:#aaa;margin-top:2px;margin-left:90px">Leading: 0 = Auto</div>
+    <div class="hint">Leading: 0 = Auto</div>
 
     <div class="row">
       <label>Color</label>
-      <input type="color" id="txtColor" value="#000000">
-      <button style="flex:1" onclick="applyFontColor(document.getElementById('txtColor').value)">Apply</button>
+      <input type="color" id="txtColor" value="#000000" oninput="liveApplyChar()">
     </div>
 
     <hr class="divider">
@@ -390,118 +393,94 @@
     <div class="row">
       <label>Tracking</label>
       <input type="range" id="txtTracking" min="-200" max="1000" value="0"
-        oninput="document.getElementById('txtTrackingVal').textContent=this.value">
+        oninput="document.getElementById('txtTrackingVal').textContent=this.value; liveApplyChar()">
       <span class="val" id="txtTrackingVal">0</span>
     </div>
-    <div class="row">
-      <label>Kerning</label>
-      <select id="txtKerning">
-        <option value="0">Metrics</option>
-        <option value="1">Optical</option>
-        <option value="manual">Manual</option>
-      </select>
-      <input type="number" id="txtKerningVal" value="0" min="-1000" max="1000" style="width:52px">
-    </div>
-
-    <hr class="divider">
 
     <div class="row">
       <label>H Scale %</label>
-      <input type="number" id="txtHScale" value="100" min="1" max="500">
-      <label style="min-width:40px">V Scale</label>
-      <input type="number" id="txtVScale" value="100" min="1" max="500">
+      <input type="number" id="txtHScale" value="100" min="1" max="500" oninput="liveApplyChar()">
+      <label style="min-width:40px;font-size:11px">V Scale</label>
+      <input type="number" id="txtVScale" value="100" min="1" max="500" oninput="liveApplyChar()">
     </div>
+
     <div class="row">
-      <label>Baseline Shift</label>
-      <input type="number" id="txtBaseline" value="0" min="-200" max="200">
+      <label>Baseline</label>
+      <input type="number" id="txtBaseline" value="0" min="-200" max="200" oninput="liveApplyChar()">
       <span style="font-size:11px;color:#aaa">pt</span>
-      <label style="min-width:30px">Skew</label>
-      <input type="number" id="txtSkew" value="0" min="-85" max="85">
+      <label style="min-width:30px;font-size:11px">Skew</label>
+      <input type="number" id="txtSkew" value="0" min="-85" max="85" oninput="liveApplyChar()">
       <span style="font-size:11px;color:#aaa">°</span>
     </div>
 
     <hr class="divider">
 
     <div class="toggle-row">
-      <span class="toggle-btn" id="txtBold"         onclick="toggleTextStyle('bold',this)"><b>B</b></span>
-      <span class="toggle-btn" id="txtItalic"       onclick="toggleTextStyle('italic',this)"><i>I</i></span>
-      <span class="toggle-btn" id="txtUnderline"    onclick="toggleTextStyle('underline',this)"><u>U</u></span>
-      <span class="toggle-btn" id="txtStrike"       onclick="toggleTextStyle('strikethrough',this)">S̶</span>
-      <span class="toggle-btn" id="txtCaps"         onclick="toggleTextStyle('caps',this)">AA</span>
-      <span class="toggle-btn" id="txtSmallCaps"    onclick="toggleTextStyle('smallCaps',this)">Aa</span>
-      <span class="toggle-btn" id="txtSuper"        onclick="toggleTextStyle('superscript',this)">X²</span>
-      <span class="toggle-btn" id="txtSub"          onclick="toggleTextStyle('subscript',this)">X₂</span>
+      <span class="toggle-btn" id="txtBold"      onclick="toggleLive(this,'bold')"><b>B</b></span>
+      <span class="toggle-btn" id="txtItalic"    onclick="toggleLive(this,'italic')"><i>I</i></span>
+      <span class="toggle-btn" id="txtUnderline" onclick="toggleLive(this,'underline')"><u>U</u></span>
+      <span class="toggle-btn" id="txtStrike"    onclick="toggleLive(this,'strikethrough')">S̶</span>
+      <span class="toggle-btn" id="txtCaps"      onclick="toggleLive(this,'caps')">AA</span>
+      <span class="toggle-btn" id="txtSmallCaps" onclick="toggleLive(this,'smallCaps')">Aa</span>
+      <span class="toggle-btn" id="txtSuper"     onclick="toggleLive(this,'superscript')">X²</span>
+      <span class="toggle-btn" id="txtSub"       onclick="toggleLive(this,'subscript')">X₂</span>
     </div>
-
-    <button class="btn-blue" onclick="applyCharacter()">Apply Character</button>
   </div>
 
-  <!-- PARAGRAPH -->
   <div class="section">
     <div class="section-title">◆ Paragraph</div>
 
     <div class="row">
       <label>Alignment</label>
-      <select id="txtAlign">
+      <select id="txtAlign" onchange="liveApplyPara()">
         <option value="left">Left</option>
         <option value="center">Center</option>
         <option value="right">Right</option>
         <option value="justify">Justify</option>
-        <option value="justifyLow">Justify Low</option>
         <option value="distributed">Distributed</option>
       </select>
     </div>
 
-    <hr class="divider">
-
     <div class="row">
       <label>Indent Left</label>
-      <input type="number" id="txtIndentLeft" value="0" min="0" max="500">
+      <input type="number" id="txtIndentLeft" value="0" min="0" max="500" oninput="liveApplyPara()">
       <span style="font-size:11px;color:#aaa">pt</span>
     </div>
     <div class="row">
       <label>Indent Right</label>
-      <input type="number" id="txtIndentRight" value="0" min="0" max="500">
+      <input type="number" id="txtIndentRight" value="0" min="0" max="500" oninput="liveApplyPara()">
       <span style="font-size:11px;color:#aaa">pt</span>
     </div>
     <div class="row">
       <label>First Line</label>
-      <input type="number" id="txtFirstLine" value="0" min="-200" max="500">
+      <input type="number" id="txtFirstLine" value="0" min="-200" max="500" oninput="liveApplyPara()">
       <span style="font-size:11px;color:#aaa">pt</span>
     </div>
-
-    <hr class="divider">
-
     <div class="row">
       <label>Space Before</label>
-      <input type="number" id="txtSpaceBefore" value="0" min="0" max="200">
+      <input type="number" id="txtSpaceBefore" value="0" min="0" max="200" oninput="liveApplyPara()">
       <span style="font-size:11px;color:#aaa">pt</span>
     </div>
     <div class="row">
       <label>Space After</label>
-      <input type="number" id="txtSpaceAfter" value="0" min="0" max="200">
+      <input type="number" id="txtSpaceAfter" value="0" min="0" max="200" oninput="liveApplyPara()">
       <span style="font-size:11px;color:#aaa">pt</span>
     </div>
     <div class="row">
       <label>Line Spacing</label>
       <input type="range" id="txtLineSpacing" min="50" max="400" value="100"
-        oninput="document.getElementById('txtLineSpacingVal').textContent=this.value+'%'">
+        oninput="document.getElementById('txtLineSpacingVal').textContent=this.value+'%'; liveApplyPara()">
       <span class="val" id="txtLineSpacingVal">100%</span>
     </div>
-
-    <button class="btn-blue" onclick="applyParagraphFormat()">Apply Paragraph</button>
   </div>
 
-  <!-- STYLES LIBRARY -->
   <div class="section">
     <div class="section-title">◆ Paragraph Styles</div>
     <div class="btn-grid-2">
       <button class="btn-green" onclick="saveParaStyle()">💾 Save Style</button>
-      <button class="btn-red"   onclick="clearParaStyles()">🗑 Clear</button>
+      <button class="btn-red" onclick="clearParaStyles()">🗑 Clear</button>
     </div>
-    <div id="paraStyleLibrary" style="margin-top:8px">
-      <div style="font-size:12px;color:#aaa;text-align:center;padding:10px">No saved styles</div>
-    </div>
+    <div id="paraStyleLibrary" style="margin-top:8px"></div>
   </div>
 
 </div>
@@ -518,17 +497,17 @@
     </div>
   </div>
   <div class="section">
-    <div class="section-title">Apply to Selected Shapes</div>
+    <div class="section-title">Apply to Selected</div>
     <div style="font-size:11px;color:#888;margin-bottom:6px">Click color then apply</div>
     <div class="palette-grid" id="applyPaletteGrid"></div>
+    <div id="selectedColorPreview" style="font-size:11px;color:#555;margin-top:6px"></div>
     <div class="btn-grid-2" style="margin-top:8px">
       <button onclick="applyColorToSelected('fill')">Apply Fill</button>
       <button onclick="applyColorToSelected('border')">Apply Border</button>
     </div>
-    <div id="selectedColorPreview" style="margin-top:6px;font-size:11px;color:#555"></div>
   </div>
   <div class="section">
-    <div class="section-title">Bulk Replace Color</div>
+    <div class="section-title">Bulk Replace</div>
     <div class="row">
       <label>Find</label>
       <input type="color" id="findColor" value="#4472C4">

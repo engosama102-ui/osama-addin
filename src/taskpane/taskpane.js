@@ -2,11 +2,12 @@ Office.onReady(() => {
   loadPaletteUI();
   loadTableLibraryUI();
   loadParaStyleLibraryUI();
+  loadSystemFonts();
 });
 
 // ===================== TABS =====================
 function switchTab(name) {
-  const names = ['align','shape','table','text','colors','canvas'];
+  const names = ['shapes','table','text','colors','canvas'];
   document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', names[i] === name));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
@@ -20,8 +21,68 @@ function showStatus(msg, type = "ok") {
   setTimeout(() => { el.className = ""; }, 3000);
 }
 
-// ===================== TOGGLE BUTTONS =====================
+// ===================== TOGGLE =====================
 function toggleBtn(el) { el.classList.toggle('on'); }
+
+// ===================== FONT PICKER =====================
+const COMMON_FONTS = [
+  "Arial","Arial Black","Arial Narrow","Calibri","Calibri Light",
+  "Cambria","Century Gothic","Comic Sans MS","Courier New",
+  "Franklin Gothic Medium","Futura","Garamond","Georgia","Gill Sans",
+  "Helvetica","Impact","Lucida Console","Myriad Pro","Open Sans",
+  "Optima","Palatino","Rockwell","Tahoma","Times New Roman",
+  "Trebuchet MS","Verdana","Wingdings","Baskerville","Didot",
+  "Bodoni MT","Bebas Neue","Montserrat","Oswald","Raleway","Roboto",
+  "Lato","Source Sans Pro","Nunito","Poppins","Inter","DM Sans"
+];
+
+let allFonts = [...COMMON_FONTS];
+
+async function loadSystemFonts() {
+  try {
+    if ('fonts' in document) {
+      await document.fonts.ready;
+      const detected = [];
+      for (const font of COMMON_FONTS) {
+        if (document.fonts.check(`12px "${font}"`)) {
+          detected.push(font);
+        }
+      }
+      if (detected.length > 0) allFonts = [...new Set([...detected, ...COMMON_FONTS])];
+    }
+  } catch(e) {}
+  renderFontDropdown(allFonts);
+}
+
+function renderFontDropdown(fonts) {
+  const dd = document.getElementById('fontDropdown');
+  dd.innerHTML = fonts.map(f =>
+    `<div class="font-option" style="font-family:'${f}'" onclick="selectFont('${f}')">${f}</div>`
+  ).join('');
+}
+
+function filterFonts(val) {
+  const filtered = allFonts.filter(f => f.toLowerCase().includes(val.toLowerCase()));
+  renderFontDropdown(filtered);
+  document.getElementById('fontDropdown').classList.add('open');
+}
+
+function openFontDropdown() {
+  renderFontDropdown(allFonts);
+  document.getElementById('fontDropdown').classList.add('open');
+}
+
+function selectFont(name) {
+  document.getElementById('txtFont').value = name;
+  document.getElementById('fontDropdown').classList.remove('open');
+  liveApplyChar();
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.font-wrap')) {
+    document.getElementById('fontDropdown').classList.remove('open');
+  }
+});
 
 // ===================== ALIGNMENT =====================
 async function alignShapes(direction) {
@@ -100,11 +161,11 @@ async function matchSize(type) {
       if (type === 'height' || type === 'both') s.height = refH;
     });
     await context.sync();
-    showStatus("✓ Size matched to first shape");
+    showStatus("✓ Size matched");
   }).catch(e => showStatus(e.message, "err"));
 }
 
-// ===================== CORNER RADIUS =====================
+// ===================== CORNER RADIUS — Selected =====================
 async function applyCornerRadius(value) {
   await PowerPoint.run(async (context) => {
     const shapes = context.presentation.getSelectedShapes();
@@ -116,33 +177,60 @@ async function applyCornerRadius(value) {
     const adjValue = Math.min(parseFloat(value) / 100, 0.5);
 
     for (const shape of shapes.items) {
-      const left = shape.left, top = shape.top, width = shape.width, height = shape.height;
-      let fillColor = "#4472C4", lineColor = "#000000", lineWeight = 1, lineVisible = false;
-      try { fillColor   = shape.fill.foregroundColor || fillColor; }  catch(e) {}
-      try { lineColor   = shape.lineFormat.color     || lineColor; }  catch(e) {}
-      try { lineWeight  = shape.lineFormat.weight    || lineWeight; } catch(e) {}
-      try { lineVisible = shape.lineFormat.visible; }                 catch(e) {}
-
-      shape.delete();
-      const newShape = slide.shapes.addGeometricShape(
-        PowerPoint.GeometricShapeType.roundRectangle,
-        { left, top, width, height }
-      );
-      newShape.fill.setSolidColor(fillColor);
-      newShape.lineFormat.color   = lineColor;
-      newShape.lineFormat.weight  = lineWeight;
-      newShape.lineFormat.visible = lineVisible;
-      await context.sync();
-
-      newShape.adjustments.load("items");
-      await context.sync();
-      if (newShape.adjustments.items.length > 0) {
-        newShape.adjustments.items[0].value = adjValue;
-        await context.sync();
-      }
+      await applyRadiusToShape(context, slide, shape, adjValue);
     }
     showStatus("✓ Corner radius applied");
   }).catch(e => showStatus("Error: " + e.message, "err"));
+}
+
+// ===================== CORNER RADIUS — All Shapes =====================
+async function applyCornerRadiusAll(value) {
+  await PowerPoint.run(async (context) => {
+    const slide = context.presentation.getSelectedSlides().getItemAt(0);
+    slide.shapes.load("items/left,items/top,items/width,items/height,items/fill/foregroundColor,items/lineFormat/color,items/lineFormat/weight,items/lineFormat/visible,items/type");
+    await context.sync();
+
+    const adjValue = Math.min(parseFloat(value) / 100, 0.5);
+    let count = 0;
+
+    for (const shape of slide.shapes.items) {
+      try {
+        await applyRadiusToShape(context, slide, shape, adjValue);
+        count++;
+      } catch(e) {}
+    }
+    showStatus(`✓ Applied to ${count} shapes`);
+  }).catch(e => showStatus("Error: " + e.message, "err"));
+}
+
+async function applyRadiusToShape(context, slide, shape, adjValue) {
+  const left = shape.left, top = shape.top, width = shape.width, height = shape.height;
+  let fillColor = "#4472C4", lineColor = "#000000", lineWeight = 1, lineVisible = false;
+  try { fillColor   = shape.fill.foregroundColor || fillColor; }  catch(e) {}
+  try { lineColor   = shape.lineFormat.color     || lineColor; }  catch(e) {}
+  try { lineWeight  = shape.lineFormat.weight    || lineWeight; } catch(e) {}
+  try { lineVisible = shape.lineFormat.visible; }                 catch(e) {}
+
+  shape.delete();
+  await context.sync();
+
+  const newShape = slide.shapes.addGeometricShape(
+    PowerPoint.GeometricShapeType.roundRectangle,
+    { left, top, width, height }
+  );
+  newShape.fill.setSolidColor(fillColor);
+  newShape.lineFormat.color   = lineColor;
+  newShape.lineFormat.weight  = lineWeight;
+  newShape.lineFormat.visible = lineVisible;
+  await context.sync();
+
+  newShape.adjustments.load("items");
+  await context.sync();
+
+  if (newShape.adjustments.items && newShape.adjustments.items.length > 0) {
+    newShape.adjustments.items[0].value = adjValue;
+    await context.sync();
+  }
 }
 
 // ===================== OPACITY =====================
@@ -153,8 +241,7 @@ async function applyOpacity(value) {
     await context.sync();
     shapes.items.forEach(s => { try { s.fill.transparency = 1 - parseFloat(value) / 100; } catch(e) {} });
     await context.sync();
-    showStatus(`✓ Opacity ${value}%`);
-  }).catch(e => showStatus(e.message, "err"));
+  }).catch(() => {});
 }
 
 // ===================== FILL COLOR =====================
@@ -165,8 +252,7 @@ async function applyFillColor(hex) {
     await context.sync();
     shapes.items.forEach(s => { try { s.fill.setSolidColor(hex); } catch(e) {} });
     await context.sync();
-    showStatus("✓ Fill color applied");
-  }).catch(e => showStatus(e.message, "err"));
+  }).catch(() => {});
 }
 
 // ===================== BORDER =====================
@@ -175,10 +261,11 @@ async function applyBorderColor(hex) {
     const shapes = context.presentation.getSelectedShapes();
     shapes.load("items/type");
     await context.sync();
-    shapes.items.forEach(s => { try { s.lineFormat.color = hex; s.lineFormat.visible = true; } catch(e) {} });
+    shapes.items.forEach(s => {
+      try { s.lineFormat.color = hex; s.lineFormat.visible = true; } catch(e) {}
+    });
     await context.sync();
-    showStatus("✓ Border color applied");
-  }).catch(e => showStatus(e.message, "err"));
+  }).catch(() => {});
 }
 
 async function applyBorderWidth(value) {
@@ -202,25 +289,20 @@ async function insertSVG() {
   const svgCode = document.getElementById("svg-input").value.trim();
   if (!svgCode || !svgCode.includes("<svg"))
     return showStatus("Paste valid SVG code first", "err");
-
   try {
     const base64 = btoa(unescape(encodeURIComponent(svgCode)));
-
     Office.context.document.setSelectedDataAsync(
       base64,
       {
         coercionType: Office.CoercionType.Image,
-        imageLeft:   100,
-        imageTop:    100,
-        imageWidth:  200,
-        imageHeight: 200
+        imageLeft: 100, imageTop: 100,
+        imageWidth: 200, imageHeight: 200
       },
-      function(result) {
-        if (result.status === Office.AsyncResultStatus.Failed) {
+      result => {
+        if (result.status === Office.AsyncResultStatus.Failed)
           showStatus("Error: " + result.error.message, "err");
-        } else {
+        else
           showStatus("✓ SVG inserted! Right-click → Convert to Shape");
-        }
       }
     );
   } catch(e) {
@@ -252,7 +334,7 @@ async function createTable() {
   const borderW      = parseFloat(document.getElementById('tblBorderW').value);
   const padding      = parseFloat(document.getElementById('tblPadding').value);
 
-  const alignMap = { left: 'Left', center: 'Center', right: 'Right', justify: 'Justify' };
+  const alignMap = { left:'Left', center:'Center', right:'Right', justify:'Justify' };
 
   await PowerPoint.run(async (context) => {
     const slide = context.presentation.getSelectedSlides().getItemAt(0);
@@ -298,7 +380,6 @@ async function createTable() {
     });
     shape.left = slide.width  * 0.1;
     shape.top  = slide.height * 0.15;
-
     await context.sync();
     showStatus("✓ Table inserted!");
   }).catch(e => showStatus(e.message, "err"));
@@ -314,27 +395,27 @@ function saveTableStyle() {
   if (!name) return;
   lib.push({
     id: Date.now(), name,
-    rows:        parseInt(document.getElementById('tblRows').value),
-    cols:        parseInt(document.getElementById('tblCols').value),
-    rowH:        parseFloat(document.getElementById('tblRowH').value),
-    colW:        parseFloat(document.getElementById('tblColW').value),
-    headerBg:    document.getElementById('tblHeaderBg').value,
-    headerFg:    document.getElementById('tblHeaderFg').value,
-    headerSize:  parseFloat(document.getElementById('tblHeaderSize').value),
-    headerFont:  document.getElementById('tblHeaderFont').value,
-    headerBold:  document.getElementById('tblHeaderBold').classList.contains('on'),
-    headerItalic:document.getElementById('tblHeaderItalic').classList.contains('on'),
-    headerCaps:  document.getElementById('tblHeaderCaps').classList.contains('on'),
-    headerAlign: document.getElementById('tblHeaderAlign').value,
-    row1Color:   document.getElementById('tblRow1').value,
-    row2Color:   document.getElementById('tblRow2').value,
-    bodyFg:      document.getElementById('tblBodyFg').value,
-    bodySize:    parseFloat(document.getElementById('tblBodySize').value),
-    bodyFont:    document.getElementById('tblBodyFont').value,
-    bodyAlign:   document.getElementById('tblBodyAlign').value,
-    borderColor: document.getElementById('tblBorder').value,
-    borderW:     parseFloat(document.getElementById('tblBorderW').value),
-    padding:     parseFloat(document.getElementById('tblPadding').value),
+    rows: parseInt(document.getElementById('tblRows').value),
+    cols: parseInt(document.getElementById('tblCols').value),
+    rowH: parseFloat(document.getElementById('tblRowH').value),
+    colW: parseFloat(document.getElementById('tblColW').value),
+    headerBg:     document.getElementById('tblHeaderBg').value,
+    headerFg:     document.getElementById('tblHeaderFg').value,
+    headerSize:   parseFloat(document.getElementById('tblHeaderSize').value),
+    headerFont:   document.getElementById('tblHeaderFont').value,
+    headerBold:   document.getElementById('tblHeaderBold').classList.contains('on'),
+    headerItalic: document.getElementById('tblHeaderItalic').classList.contains('on'),
+    headerCaps:   document.getElementById('tblHeaderCaps').classList.contains('on'),
+    headerAlign:  document.getElementById('tblHeaderAlign').value,
+    row1Color:    document.getElementById('tblRow1').value,
+    row2Color:    document.getElementById('tblRow2').value,
+    bodyFg:       document.getElementById('tblBodyFg').value,
+    bodySize:     parseFloat(document.getElementById('tblBodySize').value),
+    bodyFont:     document.getElementById('tblBodyFont').value,
+    bodyAlign:    document.getElementById('tblBodyAlign').value,
+    borderColor:  document.getElementById('tblBorder').value,
+    borderW:      parseFloat(document.getElementById('tblBorderW').value),
+    padding:      parseFloat(document.getElementById('tblPadding').value),
   });
   saveTableLib(lib);
   loadTableLibraryUI();
@@ -392,185 +473,112 @@ function loadTableLibraryUI() {
 }
 
 function deleteTableStyle(id) { saveTableLib(getTableLib().filter(i => i.id !== id)); loadTableLibraryUI(); }
-function clearTableLib() { if(confirm("Clear all table templates?")) { saveTableLib([]); loadTableLibraryUI(); } }
+function clearTableLib() { if(confirm("Clear all?")) { saveTableLib([]); loadTableLibraryUI(); } }
 
-// ===================== CHARACTER =====================
-async function applyCharacter() {
-  const fontName   = document.getElementById('txtFont').value;
-  const style      = document.getElementById('txtStyle').value;
-  const fontSize   = parseFloat(document.getElementById('txtSize').value);
-  const leadingPt  = parseFloat(document.getElementById('txtLeadingPt').value);
-  const fontColor  = document.getElementById('txtColor').value;
-  const tracking   = parseInt(document.getElementById('txtTracking').value);
-  const hScale     = parseFloat(document.getElementById('txtHScale').value);
-  const vScale     = parseFloat(document.getElementById('txtVScale').value);
-  const baseline   = parseFloat(document.getElementById('txtBaseline').value);
-  const bold       = style === 'bold'       || style === 'bolditalic' || document.getElementById('txtBold').classList.contains('on');
-  const italic     = style === 'italic'     || style === 'bolditalic' || document.getElementById('txtItalic').classList.contains('on');
-  const underline  = document.getElementById('txtUnderline').classList.contains('on');
-  const strike     = document.getElementById('txtStrike').classList.contains('on');
-  const allCaps    = document.getElementById('txtCaps').classList.contains('on');
-  const smallCaps  = document.getElementById('txtSmallCaps').classList.contains('on');
-  const superscript= document.getElementById('txtSuper').classList.contains('on');
-  const subscript  = document.getElementById('txtSub').classList.contains('on');
+// ===================== TEXT — LIVE =====================
+let applyTimer = null;
 
-  await PowerPoint.run(async (context) => {
-    const shapes = context.presentation.getSelectedShapes();
-    shapes.load("items/type");
-    await context.sync();
-
-    for (const s of shapes.items) {
-      try {
-        const tr   = s.textFrame.textRange;
-        const font = tr.font;
-
-        font.name       = fontName;
-        font.size       = fontSize;
-        font.color      = fontColor;
-        font.bold       = bold;
-        font.italic     = italic;
-        font.allCaps    = allCaps;
-        font.smallCaps  = smallCaps;
-        font.strikethrough = strike;
-        font.superscript   = superscript;
-        font.subscript     = subscript;
-        font.underline  = underline
-          ? PowerPoint.ShapeFontUnderlineStyle.single
-          : PowerPoint.ShapeFontUnderlineStyle.none;
-
-        // Tracking (kerning)
-        try { font.kerning = tracking; } catch(e) {}
-
-        // Leading — line spacing بالـ pt
-        if (leadingPt > 0) {
-          try { tr.paragraphFormat.lineSpacing = leadingPt; } catch(e) {}
-        }
-
-        // Horizontal / Vertical scale — مش موجودة في JS API مباشرة
-        // بنعملها عن طريق width/height للـ textFrame
-        // (أفضل حل متاح)
-
-        // Baseline shift
-        try { font.baselineOffset = baseline / fontSize; } catch(e) {}
-
-      } catch(e) {}
-    }
-
-    await context.sync();
-    showStatus("✓ Character applied");
-  }).catch(e => showStatus("Error: " + e.message, "err"));
+function scheduleApply(fn) {
+  clearTimeout(applyTimer);
+  applyTimer = setTimeout(fn, 300);
 }
 
-async function applyFontSize(value) {
-  await PowerPoint.run(async (context) => {
-    const shapes = context.presentation.getSelectedShapes();
-    shapes.load("items/type");
-    await context.sync();
-    for (const s of shapes.items) {
-      try { s.textFrame.textRange.font.size = parseFloat(value); } catch(e) {}
-    }
-    await context.sync();
-    showStatus(`✓ Font size ${value}pt`);
-  }).catch(e => showStatus(e.message, "err"));
+async function liveApplyChar() {
+  scheduleApply(async () => {
+    const fontName  = document.getElementById('txtFont').value;
+    const style     = document.getElementById('txtStyle').value;
+    const fontSize  = parseFloat(document.getElementById('txtSize').value);
+    const fontColor = document.getElementById('txtColor').value;
+    const tracking  = parseInt(document.getElementById('txtTracking').value);
+    const baseline  = parseFloat(document.getElementById('txtBaseline').value);
+    const bold      = style === 'bold' || style === 'bolditalic' || document.getElementById('txtBold').classList.contains('on');
+    const italic    = style === 'italic' || style === 'bolditalic' || document.getElementById('txtItalic').classList.contains('on');
+    const underline = document.getElementById('txtUnderline').classList.contains('on');
+    const strike    = document.getElementById('txtStrike').classList.contains('on');
+    const allCaps   = document.getElementById('txtCaps').classList.contains('on');
+    const smallCaps = document.getElementById('txtSmallCaps').classList.contains('on');
+    const superscript = document.getElementById('txtSuper').classList.contains('on');
+    const subscript   = document.getElementById('txtSub').classList.contains('on');
+
+    await PowerPoint.run(async (context) => {
+      const shapes = context.presentation.getSelectedShapes();
+      shapes.load("items/type");
+      await context.sync();
+
+      for (const s of shapes.items) {
+        try {
+          const font = s.textFrame.textRange.font;
+          if (fontName) font.name = fontName;
+          if (!isNaN(fontSize)) font.size = fontSize;
+          font.color     = fontColor;
+          font.bold      = bold;
+          font.italic    = italic;
+          font.allCaps   = allCaps;
+          font.smallCaps = smallCaps;
+          font.strikethrough = strike;
+          font.superscript   = superscript;
+          font.subscript     = subscript;
+          font.underline = underline
+            ? PowerPoint.ShapeFontUnderlineStyle.single
+            : PowerPoint.ShapeFontUnderlineStyle.none;
+          try { font.kerning = tracking; } catch(e) {}
+          try {
+            if (baseline !== 0) font.baselineOffset = baseline / fontSize;
+          } catch(e) {}
+        } catch(e) {}
+      }
+      await context.sync();
+    }).catch(() => {});
+  });
 }
 
-async function applyFontColor(hex) {
-  await PowerPoint.run(async (context) => {
-    const shapes = context.presentation.getSelectedShapes();
-    shapes.load("items/type");
-    await context.sync();
-    for (const s of shapes.items) {
-      try { s.textFrame.textRange.font.color = hex; } catch(e) {}
-    }
-    await context.sync();
-    showStatus("✓ Color applied");
-  }).catch(e => showStatus(e.message, "err"));
+async function liveApplyPara() {
+  scheduleApply(async () => {
+    const align       = document.getElementById('txtAlign').value;
+    const spaceBefore = parseFloat(document.getElementById('txtSpaceBefore').value) || 0;
+    const spaceAfter  = parseFloat(document.getElementById('txtSpaceAfter').value) || 0;
+    const lineSpacing = parseFloat(document.getElementById('txtLineSpacing').value) || 100;
+    const indentLeft  = parseFloat(document.getElementById('txtIndentLeft').value) || 0;
+    const indentRight = parseFloat(document.getElementById('txtIndentRight').value) || 0;
+    const firstLine   = parseFloat(document.getElementById('txtFirstLine').value) || 0;
+    const leadingPt   = parseFloat(document.getElementById('txtLeadingPt').value) || 0;
+
+    const alignMap = {
+      left:        PowerPoint.ParagraphHorizontalAlignment.left,
+      center:      PowerPoint.ParagraphHorizontalAlignment.center,
+      right:       PowerPoint.ParagraphHorizontalAlignment.right,
+      justify:     PowerPoint.ParagraphHorizontalAlignment.justify,
+      distributed: PowerPoint.ParagraphHorizontalAlignment.distributed,
+    };
+
+    await PowerPoint.run(async (context) => {
+      const shapes = context.presentation.getSelectedShapes();
+      shapes.load("items/type");
+      await context.sync();
+
+      for (const s of shapes.items) {
+        try {
+          const pf = s.textFrame.textRange.paragraphFormat;
+          pf.horizontalAlignment = alignMap[align] || PowerPoint.ParagraphHorizontalAlignment.left;
+          pf.spaceBefore = spaceBefore;
+          pf.spaceAfter  = spaceAfter;
+          pf.lineSpacing = leadingPt > 0 ? leadingPt : lineSpacing;
+          try { pf.leftMargin     = indentLeft;  } catch(e) {}
+          try { pf.rightMargin    = indentRight; } catch(e) {}
+          try { pf.firstLineIndent = firstLine;  } catch(e) {}
+        } catch(e) {}
+      }
+      await context.sync();
+    }).catch(() => {});
+  });
 }
 
-async function toggleTextStyle(style, el) {
+async function toggleLive(el, style) {
   el.classList.toggle('on');
-  const isOn = el.classList.contains('on');
-  await PowerPoint.run(async (context) => {
-    const shapes = context.presentation.getSelectedShapes();
-    shapes.load("items/type");
-    await context.sync();
-    for (const s of shapes.items) {
-      try {
-        const font = s.textFrame.textRange.font;
-        if (style === 'bold')          font.bold          = isOn;
-        if (style === 'italic')        font.italic        = isOn;
-        if (style === 'caps')          font.allCaps       = isOn;
-        if (style === 'smallCaps')     font.smallCaps     = isOn;
-        if (style === 'strikethrough') font.strikethrough = isOn;
-        if (style === 'superscript')   font.superscript   = isOn;
-        if (style === 'subscript')     font.subscript     = isOn;
-        if (style === 'underline')     font.underline     = isOn
-          ? PowerPoint.ShapeFontUnderlineStyle.single
-          : PowerPoint.ShapeFontUnderlineStyle.none;
-      } catch(e) {}
-    }
-    await context.sync();
-    showStatus(`✓ ${style} ${isOn ? 'on' : 'off'}`);
-  }).catch(e => showStatus(e.message, "err"));
+  await liveApplyChar();
 }
 
-// ===================== TRACKING =====================
-async function applyTracking(value) {
-  await PowerPoint.run(async (context) => {
-    const shapes = context.presentation.getSelectedShapes();
-    shapes.load("items/type");
-    await context.sync();
-    for (const s of shapes.items) {
-      try { s.textFrame.textRange.font.kerning = parseInt(value); } catch(e) {}
-    }
-    await context.sync();
-    showStatus(`✓ Tracking ${value}`);
-  }).catch(e => showStatus(e.message, "err"));
-}
-
-// ===================== PARAGRAPH FORMAT =====================
-async function applyParagraphFormat() {
-  const align       = document.getElementById('txtAlign').value;
-  const spaceBefore = parseFloat(document.getElementById('txtSpaceBefore').value);
-  const spaceAfter  = parseFloat(document.getElementById('txtSpaceAfter').value);
-  const lineSpacing = parseFloat(document.getElementById('txtLineSpacing').value);
-  const indentLeft  = parseFloat(document.getElementById('txtIndentLeft').value);
-  const indentRight = parseFloat(document.getElementById('txtIndentRight').value);
-  const firstLine   = parseFloat(document.getElementById('txtFirstLine').value);
-
-  const alignMap = {
-    left:        PowerPoint.ParagraphHorizontalAlignment.left,
-    center:      PowerPoint.ParagraphHorizontalAlignment.center,
-    right:       PowerPoint.ParagraphHorizontalAlignment.right,
-    justify:     PowerPoint.ParagraphHorizontalAlignment.justify,
-    justifyLow:  PowerPoint.ParagraphHorizontalAlignment.justifyLow,
-    distributed: PowerPoint.ParagraphHorizontalAlignment.distributed,
-  };
-
-  await PowerPoint.run(async (context) => {
-    const shapes = context.presentation.getSelectedShapes();
-    shapes.load("items/type");
-    await context.sync();
-
-    for (const s of shapes.items) {
-      try {
-        const pf = s.textFrame.textRange.paragraphFormat;
-        pf.horizontalAlignment = alignMap[align] || PowerPoint.ParagraphHorizontalAlignment.left;
-        pf.spaceBefore         = spaceBefore;
-        pf.spaceAfter          = spaceAfter;
-        pf.lineSpacing         = lineSpacing;
-        try { pf.leftMargin   = indentLeft;  } catch(e) {}
-        try { pf.rightMargin  = indentRight; } catch(e) {}
-        try { pf.firstLineIndent = firstLine; } catch(e) {}
-      } catch(e) {}
-    }
-
-    await context.sync();
-    showStatus("✓ Paragraph applied");
-  }).catch(e => showStatus("Error: " + e.message, "err"));
-}
-
-// ===================== PARAGRAPH STYLES LIBRARY =====================
+// ===================== PARAGRAPH STYLES =====================
 function getParaStyles()      { try { return JSON.parse(localStorage.getItem("paraStyles") || "[]"); } catch { return []; } }
 function saveParaStylesLib(s) { localStorage.setItem("paraStyles", JSON.stringify(s)); }
 
@@ -579,15 +587,13 @@ function saveParaStyle() {
   const name   = prompt("Style name:", `Style ${styles.length + 1}`);
   if (!name) return;
   styles.push({
-    id:          Date.now(), name,
+    id: Date.now(), name,
     fontName:    document.getElementById('txtFont').value,
     style:       document.getElementById('txtStyle').value,
     fontSize:    parseFloat(document.getElementById('txtSize').value),
     leadingPt:   parseFloat(document.getElementById('txtLeadingPt').value),
     fontColor:   document.getElementById('txtColor').value,
     tracking:    parseInt(document.getElementById('txtTracking').value),
-    hScale:      parseFloat(document.getElementById('txtHScale').value),
-    vScale:      parseFloat(document.getElementById('txtVScale').value),
     baseline:    parseFloat(document.getElementById('txtBaseline').value),
     bold:        document.getElementById('txtBold').classList.contains('on'),
     italic:      document.getElementById('txtItalic').classList.contains('on'),
@@ -618,8 +624,6 @@ function loadParaStyle(item) {
   document.getElementById('txtColor').value             = item.fontColor;
   document.getElementById('txtTracking').value          = item.tracking;
   document.getElementById('txtTrackingVal').textContent = item.tracking;
-  document.getElementById('txtHScale').value            = item.hScale || 100;
-  document.getElementById('txtVScale').value            = item.vScale || 100;
   document.getElementById('txtBaseline').value          = item.baseline || 0;
   document.getElementById('txtSpaceBefore').value       = item.spaceBefore;
   document.getElementById('txtSpaceAfter').value        = item.spaceAfter;
@@ -637,7 +641,9 @@ function loadParaStyle(item) {
   document.getElementById('txtSmallCaps').classList.toggle('on',    !!item.smallCaps);
   document.getElementById('txtSuper').classList.toggle('on',        !!item.superscript);
   document.getElementById('txtSub').classList.toggle('on',          !!item.subscript);
-  showStatus(`✓ Loaded "${item.name}" — click Apply`);
+  liveApplyChar();
+  liveApplyPara();
+  showStatus(`✓ Loaded "${item.name}"`);
 }
 
 function loadParaStyleLibraryUI() {
@@ -650,7 +656,7 @@ function loadParaStyleLibraryUI() {
   el.innerHTML = styles.map(item => `
     <div class="style-item" onclick="loadParaStyle(${JSON.stringify(item).replace(/"/g,'&quot;')})">
       <div>
-        <div class="style-preview" style="font-family:'${item.fontName}';color:${item.fontColor};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'}">
+        <div style="font-family:'${item.fontName}';color:${item.fontColor};font-weight:${item.bold?'bold':'normal'};font-style:${item.italic?'italic':'normal'};font-size:13px">
           ${item.name}
         </div>
         <div class="style-meta">${item.fontName} · ${item.fontSize}pt · ${item.align}</div>
@@ -701,12 +707,11 @@ function selectColor(hex, name) {
 }
 
 async function applyColorToSelected(type) {
-  if (!selectedPaletteColor) return showStatus("Click a color swatch first", "err");
+  if (!selectedPaletteColor) return showStatus("Click a color first", "err");
   if (type === 'fill') await applyFillColor(selectedPaletteColor);
   else                 await applyBorderColor(selectedPaletteColor);
 }
 
-// ===================== BULK REPLACE =====================
 async function bulkColorReplace() {
   const findHex    = document.getElementById('findColor').value.replace('#','').toUpperCase();
   const replaceHex = document.getElementById('replaceColor').value;
@@ -742,16 +747,16 @@ async function addGrid() {
     for (let x = size; x < W; x += size) {
       const line = slide.shapes.addLine(PowerPoint.ConnectorType.straight,
         { left: x, top: 0, height: H, width: 0 });
-      line.lineFormat.color        = color;
-      line.lineFormat.weight       = 0.5;
+      line.lineFormat.color = color;
+      line.lineFormat.weight = 0.5;
       line.lineFormat.transparency = 1 - opacity;
       line.name = "__grid__";
     }
     for (let y = size; y < H; y += size) {
       const line = slide.shapes.addLine(PowerPoint.ConnectorType.straight,
         { left: 0, top: y, height: 0, width: W });
-      line.lineFormat.color        = color;
-      line.lineFormat.weight       = 0.5;
+      line.lineFormat.color = color;
+      line.lineFormat.weight = 0.5;
       line.lineFormat.transparency = 1 - opacity;
       line.name = "__grid__";
     }
