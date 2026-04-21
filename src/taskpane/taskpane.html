@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Osama Addion</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f0f0; font-size: 13px; color: #333; }
+
+    .tabs {
+      display: flex; background: #fff;
+      border-bottom: 2px solid #e0e0e0;
+      position: sticky; top: 0; z-index: 10;
+      overflow-x: auto;
+    }
+    .tab {
+      flex: 1; padding: 8px 2px; text-align: center;
+      font-size: 10px; cursor: pointer; border: none;
+      background: none; color: #888; white-space: nowrap;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      min-width: 44px;
+    }
+    .tab.active { color: #2d6cf6; border-bottom-color: #2d6cf6; font-weight: bold; }
+
+    .panel { display: none; padding: 8px; }
+    .panel.active { display: block; }
+
+    .section {
+      background: #fff; border-radius: 8px;
+      padding: 10px 12px; margin-bottom: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .section-title {
+      font-size: 10px; font-weight: bold; color: #999;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+    }
+
+    .btn-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+    .btn-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+
+    button {
+      padding: 7px 4px; font-size: 11px; cursor: pointer;
+      border: 1px solid #ddd; border-radius: 6px;
+      background: #fafafa; color: #333;
+    }
+    button:hover { background: #e8e8e8; }
+
+    .btn-blue {
+      background: #2d6cf6; color: #fff; border: none;
+      width: 100%; padding: 8px; border-radius: 6px;
+      font-size: 12px; margin-top: 6px; cursor: pointer;
+    }
+    .btn-blue:hover { background: #1a57d6; }
+    .btn-red { background: #ff4d4d; color: #fff; border: none; }
+    .btn-red:hover { background: #e03d3d; }
+    .btn-green { background: #28a745; color: #fff; border: none; }
+    .btn-green:hover { background: #1e8035; }
+
+    .row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+    .row label { font-size: 11px; color: #666; min-width: 90px; }
+    .row input[type=range] { flex: 1; }
+    .row span.val { font-size: 11px; min-width: 28px; text-align: right; }
+    .row input[type=color] { width: 32px; height: 26px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; padding: 1px; }
+    .row input[type=number] { width: 56px; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
+    .row input[type=text] { flex:1; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
+    .row select { flex:1; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 12px; }
+
+    .toggle-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+    .toggle-btn {
+      padding: 5px 10px; font-size: 11px; border: 1px solid #ddd;
+      border-radius: 5px; cursor: pointer; background: #fafafa;
+    }
+    .toggle-btn.on { background: #2d6cf6; color: #fff; border-color: #2d6cf6; }
+
+    /* Palette */
+    .palette-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .swatch {
+      width: 26px; height: 26px; border-radius: 5px;
+      cursor: pointer; border: 2px solid transparent; position: relative;
+    }
+    .swatch:hover { border-color: #333; }
+    .swatch .del {
+      position: absolute; top: -5px; right: -5px;
+      background: #ff4d4d; color: #fff; border-radius: 50%;
+      width: 13px; height: 13px; font-size: 9px;
+      display: none; align-items: center; justify-content: center;
+      cursor: pointer; line-height: 1;
+    }
+    .swatch:hover .del { display: flex; }
+
+    /* Table Library */
+    .table-item {
+      border: 1px solid #ddd; border-radius: 6px;
+      padding: 8px; margin-bottom: 6px;
+      background: #fafafa; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .table-item:hover { background: #eef4ff; border-color: #2d6cf6; }
+    .table-info { font-size: 11px; }
+    .table-info b { font-size: 12px; display: block; margin-bottom: 2px; }
+
+    /* Paragraph Styles Library */
+    .style-item {
+      border: 1px solid #ddd; border-radius: 6px;
+      padding: 7px 10px; margin-bottom: 5px;
+      background: #fafafa; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .style-item:hover { background: #eef4ff; border-color: #2d6cf6; }
+    .style-preview { font-size: 13px; font-weight: bold; flex: 1; }
+    .style-meta { font-size: 10px; color: #aaa; }
+
+    #status {
+      font-size: 11px; margin: 4px 8px;
+      padding: 6px 10px; border-radius: 6px; display: none;
+    }
+    #status.ok  { display: block; background: #e6f4ea; color: #2d7a3a; }
+    #status.err { display: block; background: #fdecea; color: #c0392b; }
+
+    .divider { border: none; border-top: 1px solid #eee; margin: 8px 0; }
+    .hint { font-size: 10px; color: #aaa; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('align')">Align</button>
+  <button class="tab" onclick="switchTab('shape')">Shape</button>
+  <button class="tab" onclick="switchTab('table')">Table</button>
+  <button class="tab" onclick="switchTab('text')">Text</button>
+  <button class="tab" onclick="switchTab('colors')">Colors</button>
+  <button class="tab" onclick="switchTab('canvas')">Canvas</button>
+</div>
+
+<!-- ===== ALIGN ===== -->
+<div id="tab-align" class="panel active">
+  <div class="section">
+    <div class="section-title">Align to Slide</div>
+    <div class="btn-grid-3">
+      <button onclick="alignShapes('left')">⬅ Left</button>
+      <button onclick="alignShapes('center')">↔ Center</button>
+      <button onclick="alignShapes('right')">➡ Right</button>
+      <button onclick="alignShapes('top')">⬆ Top</button>
+      <button onclick="alignShapes('middle')">↕ Middle</button>
+      <button onclick="alignShapes('bottom')">⬇ Bottom</button>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Distribute</div>
+    <div class="btn-grid-2">
+      <button onclick="distributeShapes('h')">↔ Horizontal</button>
+      <button onclick="distributeShapes('v')">↕ Vertical</button>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Match Size</div>
+    <div class="btn-grid-3">
+      <button onclick="matchSize('width')">= Width</button>
+      <button onclick="matchSize('height')">= Height</button>
+      <button onclick="matchSize('both')">= Both</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SHAPE ===== -->
+<div id="tab-shape" class="panel">
+  <div class="section">
+    <div class="section-title">Round Corners</div>
+    <div class="row">
+      <label>Radius</label>
+      <input type="range" id="cornerSlider" min="0" max="50" value="10"
+        oninput="document.getElementById('cornerVal').textContent=this.value">
+      <span class="val" id="cornerVal">10</span>
+    </div>
+    <button class="btn-blue" onclick="applyCornerRadius(document.getElementById('cornerSlider').value)">
+      Apply Corner Radius
+    </button>
+    <div class="hint">* Converts shape to RoundRectangle</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Fill & Opacity</div>
+    <div class="row">
+      <label>Fill Color</label>
+      <input type="color" id="fillColor" value="#4472C4">
+      <button style="flex:1" onclick="applyFillColor(document.getElementById('fillColor').value)">Apply</button>
+    </div>
+    <div class="row">
+      <label>Opacity %</label>
+      <input type="range" id="opacitySlider" min="0" max="100" value="100"
+        oninput="document.getElementById('opacityVal').textContent=this.value">
+      <span class="val" id="opacityVal">100</span>
+    </div>
+    <button class="btn-blue" onclick="applyOpacity(document.getElementById('opacitySlider').value)">Apply Opacity</button>
+  </div>
+  <div class="section">
+    <div class="section-title">Border</div>
+    <div class="row">
+      <label>Color</label>
+      <input type="color" id="borderColor" value="#000000">
+      <button style="flex:1" onclick="applyBorderColor(document.getElementById('borderColor').value)">Apply</button>
+    </div>
+    <div class="row">
+      <label>Width (pt)</label>
+      <input type="range" id="borderSlider" min="0" max="20" value="1"
+        oninput="document.getElementById('borderVal').textContent=this.value; applyBorderWidth(this.value)">
+      <span class="val" id="borderVal">1</span>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Insert SVG</div>
+    <textarea id="svg-input" style="width:100%;height:70px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;padding:6px;resize:vertical;margin-top:4px" placeholder="Paste SVG code here..."></textarea>
+    <button class="btn-blue" onclick="insertSVG()">Insert SVG into Slide</button>
+    <div class="hint">* After insert: right-click → Convert to Shape</div>
+  </div>
+</div>
+
+<!-- ===== TABLE ===== -->
+<div id="tab-table" class="panel">
+  <div class="section">
+    <div class="section-title">Table Size</div>
+    <div class="row">
+      <label>Rows</label>
+      <input type="number" id="tblRows" value="4" min="1" max="30">
+      <label style="min-width:40px">Cols</label>
+      <input type="number" id="tblCols" value="4" min="1" max="20">
+    </div>
+    <div class="row">
+      <label>Row Height</label>
+      <input type="number" id="tblRowH" value="40" min="15" max="300">
+      <span style="font-size:11px;color:#aaa">pt</span>
+    </div>
+    <div class="row">
+      <label>Col Width</label>
+      <input type="number" id="tblColW" value="0" min="0">
+      <span style="font-size:10px;color:#aaa">0=auto</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Header Row</div>
+    <div class="row">
+      <label>Background</label>
+      <input type="color" id="tblHeaderBg" value="#2d6cf6">
+    </div>
+    <div class="row">
+      <label>Text Color</label>
+      <input type="color" id="tblHeaderFg" value="#ffffff">
+    </div>
+    <div class="row">
+      <label>Font Size</label>
+      <input type="number" id="tblHeaderSize" value="12" min="6" max="72">
+      <span style="font-size:11px;color:#aaa">pt</span>
+    </div>
+    <div class="row">
+      <label>Font Name</label>
+      <input type="text" id="tblHeaderFont" value="Calibri">
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-btn on" id="tblHeaderBold" onclick="toggleBtn(this)">B Bold</span>
+      <span class="toggle-btn" id="tblHeaderItalic" onclick="toggleBtn(this)">I Italic</span>
+      <span class="toggle-btn" id="tblHeaderCaps" onclick="toggleBtn(this)">AA Caps</span>
+    </div>
+    <div class="row">
+      <label>Align</label>
+      <select id="tblHeaderAlign">
+        <option value="center">Center</option>
+        <option value="left">Left</option>
+        <option value="right">Right</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Body Rows</div>
+    <div class="row">
+      <label>Row Color 1</label>
+      <input type="color" id="tblRow1" value="#ffffff">
+    </div>
+    <div class="row">
+      <label>Row Color 2</label>
+      <input type="color" id="tblRow2" value="#f0f4ff">
+    </div>
+    <div class="row">
+      <label>Text Color</label>
+      <input type="color" id="tblBodyFg" value="#333333">
+    </div>
+    <div class="row">
+      <label>Font Size</label>
+      <input type="number" id="tblBodySize" value="11" min="6" max="72">
+      <span style="font-size:11px;color:#aaa">pt</span>
+    </div>
+    <div class="row">
+      <label>Font Name</label>
+      <input type="text" id="tblBodyFont" value="Calibri">
+    </div>
+    <div class="row">
+      <label>Align</label>
+      <select id="tblBodyAlign">
+        <option value="left">Left</option>
+        <option value="center">Center</option>
+        <option value="right">Right</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Borders</div>
+    <div class="row">
+      <label>Color</label>
+      <input type="color" id="tblBorder" value="#cccccc">
+    </div>
+    <div class="row">
+      <label>Width (pt)</label>
+      <input type="range" id="tblBorderW" min="0" max="5" step="0.5" value="1"
+        oninput="document.getElementById('tblBorderWVal').textContent=this.value">
+      <span class="val" id="tblBorderWVal">1</span>
+    </div>
+    <div class="row">
+      <label>Style</label>
+      <select id="tblBorderStyle">
+        <option value="single">Single</option>
+        <option value="thick">Thick</option>
+        <option value="double">Double</option>
+        <option value="none">None</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Padding & Spacing</div>
+    <div class="row">
+      <label>Cell Padding</label>
+      <input type="number" id="tblPadding" value="5" min="0" max="30">
+      <span style="font-size:11px;color:#aaa">pt</span>
+    </div>
+  </div>
+
+  <button class="btn-blue" style="margin: 0 8px 6px; width: calc(100% - 16px)" onclick="createTable()">
+    ➕ Insert Table
+  </button>
+
+  <div class="section">
+    <div class="section-title">Table Library</div>
+    <div class="btn-grid-2">
+      <button class="btn-green" onclick="saveTableStyle()">💾 Save Style</button>
+      <button class="btn-red" onclick="clearTableLib()">🗑 Clear All</button>
+    </div>
+    <div id="tableLibrary" style="margin-top:8px">
+      <div style="font-size:12px;color:#aaa;text-align:center;padding:10px">No saved templates</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TEXT ===== -->
+<div id="tab-text" class="panel">
+
+  <!-- CHARACTER -->
+  <div class="section">
+    <div class="section-title">◆ Character</div>
+
+    <div class="row">
+      <label>Font</label>
+      <input type="text" id="txtFont" value="Calibri" placeholder="Font name">
+    </div>
+    <div class="row">
+      <label>Style</label>
+      <select id="txtStyle">
+        <option value="normal">Regular</option>
+        <option value="bold">Bold</option>
+        <option value="italic">Italic</option>
+        <option value="bolditalic">Bold Italic</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Size (pt)</label>
+      <input type="number" id="txtSize" value="24" min="1" max="400">
+      <label style="min-width:40px">Lead</label>
+      <input type="number" id="txtLeadingPt" value="0" min="0" max="400">
+    </div>
+    <div style="font-size:10px;color:#aaa;margin-top:2px;margin-left:90px">Leading: 0 = Auto</div>
+
+    <div class="row">
+      <label>Color</label>
+      <input type="color" id="txtColor" value="#000000">
+      <button style="flex:1" onclick="applyFontColor(document.getElementById('txtColor').value)">Apply</button>
+    </div>
+
+    <hr class="divider">
+
+    <div class="row">
+      <label>Tracking</label>
+      <input type="range" id="txtTracking" min="-200" max="1000" value="0"
+        oninput="document.getElementById('txtTrackingVal').textContent=this.value">
+      <span class="val" id="txtTrackingVal">0</span>
+    </div>
+    <div class="row">
+      <label>Kerning</label>
+      <select id="txtKerning">
+        <option value="0">Metrics</option>
+        <option value="1">Optical</option>
+        <option value="manual">Manual</option>
+      </select>
+      <input type="number" id="txtKerningVal" value="0" min="-1000" max="1000" style="width:52px">
+    </div>
+
+    <hr class="divider">
+
+    <div class="row">
+      <label>H Scale %</label>
+      <input type="number" id="txtHScale" value="100" min="1" max="500">
+      <label style="min-width:40px">V Scale</label>
+      <input type="number" id="txtVScale" value="100" min="1" max="500">
+    </div>
+    <div class="row">
+      <label>Baseline Shift</label>
+      <input type="number" id="txtBaseline" value="0" min="-200" max="200">
+      <span style="font-size:11px;color:#aaa">pt</span>
+      <label style="min-width:30px">Skew</label>
+      <input type="number" id="txtSkew" value="0" min="-85" max="85">
+      <span style="font-size:11px;color:#aaa">°</span>
+    </div>
+
+    <hr class="divider">
+
+    <div class="toggle-row">
+      <span class="toggle-btn" id="txtBold"         onclick="toggleTextStyle('bold',this)"><b>B</b></span>
+      <span class="toggle-btn" id="txtItalic"       onclick="toggleTextStyle('italic',this)"><i>I</i></span>
+      <span class="toggle-btn" id="txtUnderline"    onclick="toggleTextStyle('underline',this)"><u>U</u></span>
+      <span class="toggle-btn" id="txtStrike"       onclick="toggleTextStyle('strikethrough',this)">S̶</span>
+      <span class="toggle-btn" id="txtCaps"         onclick="toggleTextStyle('caps',this)">AA</span>
+      <span class="toggle-btn" id="txtSmallCaps"    onclick="toggleTextStyle('smallCaps',this)">Aa</span>
+      <span class="toggle-btn" id="txtSuper"        onclick="toggleTextStyle('superscript',this)">X²</span>
+      <span class="toggle-btn" id="txtSub"          onclick="toggleTextStyle('subscript',this)">X₂</span>
+    </div>
+
+    <button class="btn-blue" onclick="applyCharacter()">Apply Character</button>
+  </div>
+
+  <!-- PARAGRAPH -->
+  <div class="section">
+    <div class="section-title">◆ Paragraph</div>
+
+    <div class="row">
+      <label>Alignment</label>
+      <select id="txtAlign">
+        <option value="left">Left</option>
+        <option value="center">Center</option>
+        <option value="right">Right</option>
+        <option value="justify">Justify</option>
+        <option value="justifyLow">Justify Low</option>
+        <option value="distributed">Distributed</option>
+      </select>
+    </div>
+
+    <hr class="divider">
+
+    <div class="row">
+      <label>Indent Left</label>
+      <input type="number" id="txtIndentLeft" value="0" min="0" max="500">
+      <span style="font-size:11px;color:#aaa">pt</span>
+    </div>
+    <div class="row">
+      <label>Indent Right</label>
+      <input type="number" id="txtIndentRight" value="0" min="0" max="500">
+      <span style="font-size:11px;color:#aaa">pt</span>
+    </div>
+    <div class="row">
+      <label>First Line</label>
+      <input type="number" id="txtFirstLine" value="0" min="-200" max="500">
+      <span style="font-size:11px;color:#aaa">pt</span>
+    </div>
+
+    <hr class="divider">
+
+    <div class="row">
+      <label>Space Before</label>
+      <input type="number" id="txtSpaceBefore" value="0" min="0" max="200">
+      <span style="font-size:11px;color:#aaa">pt</span>
+    </div>
+    <div class="row">
+      <label>Space After</label>
+      <input type="number" id="txtSpaceAfter" value="0" min="0" max="200">
+      <span style="font-size:11px;color:#aaa">pt</span>
+    </div>
+    <div class="row">
+      <label>Line Spacing</label>
+      <input type="range" id="txtLineSpacing" min="50" max="400" value="100"
+        oninput="document.getElementById('txtLineSpacingVal').textContent=this.value+'%'">
+      <span class="val" id="txtLineSpacingVal">100%</span>
+    </div>
+
+    <button class="btn-blue" onclick="applyParagraphFormat()">Apply Paragraph</button>
+  </div>
+
+  <!-- STYLES LIBRARY -->
+  <div class="section">
+    <div class="section-title">◆ Paragraph Styles</div>
+    <div class="btn-grid-2">
+      <button class="btn-green" onclick="saveParaStyle()">💾 Save Style</button>
+      <button class="btn-red"   onclick="clearParaStyles()">🗑 Clear</button>
+    </div>
+    <div id="paraStyleLibrary" style="margin-top:8px">
+      <div style="font-size:12px;color:#aaa;text-align:center;padding:10px">No saved styles</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== COLORS ===== -->
+<div id="tab-colors" class="panel">
+  <div class="section">
+    <div class="section-title">My Color Palette</div>
+    <div class="palette-grid" id="paletteGrid"></div>
+    <div class="row" style="margin-top:8px">
+      <input type="color" id="newColor" value="#4472C4">
+      <input type="text" id="newColorName" placeholder="Name (optional)">
+      <button onclick="addColor()">+ Add</button>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Apply to Selected Shapes</div>
+    <div style="font-size:11px;color:#888;margin-bottom:6px">Click color then apply</div>
+    <div class="palette-grid" id="applyPaletteGrid"></div>
+    <div class="btn-grid-2" style="margin-top:8px">
+      <button onclick="applyColorToSelected('fill')">Apply Fill</button>
+      <button onclick="applyColorToSelected('border')">Apply Border</button>
+    </div>
+    <div id="selectedColorPreview" style="margin-top:6px;font-size:11px;color:#555"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Bulk Replace Color</div>
+    <div class="row">
+      <label>Find</label>
+      <input type="color" id="findColor" value="#4472C4">
+    </div>
+    <div class="row">
+      <label>Replace</label>
+      <input type="color" id="replaceColor" value="#ff0000">
+    </div>
+    <button class="btn-blue" onclick="bulkColorReplace()">Replace All on Slide</button>
+  </div>
+</div>
+
+<!-- ===== CANVAS ===== -->
+<div id="tab-canvas" class="panel">
+  <div class="section">
+    <div class="section-title">Grid</div>
+    <div class="row">
+      <label>Size (pt)</label>
+      <input type="number" id="gridSize" value="50" min="5" max="300">
+    </div>
+    <div class="row">
+      <label>Color</label>
+      <input type="color" id="gridColor" value="#e0e0e0">
+    </div>
+    <div class="row">
+      <label>Opacity %</label>
+      <input type="range" id="gridOpacity" min="10" max="100" value="40"
+        oninput="document.getElementById('gridOpacityVal').textContent=this.value">
+      <span class="val" id="gridOpacityVal">40</span>
+    </div>
+    <div class="btn-grid-2" style="margin-top:6px">
+      <button onclick="addGrid()">+ Add Grid</button>
+      <button class="btn-red" onclick="removeGrid()">✕ Remove</button>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Guides</div>
+    <div class="row">
+      <label>Position (pt)</label>
+      <input type="number" id="guidePos" value="100" min="0">
+    </div>
+    <div class="row">
+      <label>Color</label>
+      <input type="color" id="guideColor" value="#ff6600">
+    </div>
+    <div class="btn-grid-2" style="margin-top:6px">
+      <button onclick="addGuide('h')">— Horizontal</button>
+      <button onclick="addGuide('v')">| Vertical</button>
+    </div>
+    <button class="btn-red" style="width:100%;margin-top:5px" onclick="removeGuides()">✕ Remove All Guides</button>
+  </div>
+  <div class="section">
+    <div class="section-title">Slide Info</div>
+    <button class="btn-blue" style="margin-top:0" onclick="showSlideInfo()">Show Slide Size</button>
+    <div id="slideInfo" style="font-size:11px;color:#555;margin-top:6px"></div>
+  </div>
+</div>
+
+<div id="status"></div>
+
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script src="taskpane.js"></script>
+</body>
+</html>
