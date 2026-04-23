@@ -8,19 +8,18 @@
     body { font-family: Arial, sans-serif; background: #f0f0f0; font-size: 13px; color: #333; }
 
     .tabs {
-      display: flex; background: #fff;
-      border-bottom: 2px solid #e0e0e0;
+      display: flex; background: #1e1e2e;
       position: sticky; top: 0; z-index: 10;
       overflow-x: auto;
     }
     .tab {
-      flex: 1; padding: 8px 2px; text-align: center;
+      flex: 1; padding: 10px 4px; text-align: center;
       font-size: 10px; cursor: pointer; border: none;
       background: none; color: #888; white-space: nowrap;
-      border-bottom: 2px solid transparent; margin-bottom: -2px;
-      min-width: 44px;
+      border-bottom: 2px solid transparent;
+      min-width: 44px; transition: all 0.15s;
     }
-    .tab.active { color: #2d6cf6; border-bottom-color: #2d6cf6; font-weight: bold; }
+    .tab.active { color: #7c8dfc; border-bottom-color: #7c8dfc; font-weight: bold; }
 
     .panel { display: none; padding: 8px; }
     .panel.active { display: block; }
@@ -35,24 +34,53 @@
       text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
     }
 
-    .btn-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+    /* Icon Buttons */
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+    .icon-btn {
+      aspect-ratio: 1;
+      display: flex; align-items: center; justify-content: center;
+      background: #f5f5f7; border: 1px solid #e0e0e0;
+      border-radius: 6px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      padding: 4px;
+    }
+    .icon-btn:hover { background: #e8edff; border-color: #7c8dfc; }
+    .icon-btn svg { width: 18px; height: 18px; }
+    .icon-btn.active { background: #7c8dfc; border-color: #7c8dfc; }
+    .icon-btn.active svg { filter: brightness(10); }
+
+    /* Align mode toggle */
+    .align-mode {
+      display: flex; gap: 4px; margin-bottom: 8px;
+    }
+    .align-mode-btn {
+      flex: 1; padding: 5px; font-size: 10px; text-align: center;
+      border: 1px solid #ddd; border-radius: 6px; cursor: pointer;
+      background: #f5f5f7; color: #666; transition: all 0.15s;
+    }
+    .align-mode-btn.active { background: #1e1e2e; color: #fff; border-color: #1e1e2e; }
+
     .btn-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .btn-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
 
     button {
       padding: 7px 4px; font-size: 11px; cursor: pointer;
       border: 1px solid #ddd; border-radius: 6px;
-      background: #fafafa; color: #333;
+      background: #f5f5f7; color: #333; transition: background 0.15s;
     }
     button:hover { background: #e8e8e8; }
 
     .btn-blue {
-      background: #2d6cf6; color: #fff; border: none;
+      background: #7c8dfc; color: #fff; border: none;
       width: 100%; padding: 8px; border-radius: 6px;
       font-size: 12px; margin-top: 6px; cursor: pointer;
     }
-    .btn-blue:hover { background: #1a57d6; }
+    .btn-blue:hover { background: #6070e8; }
     .btn-red { background: #ff4d4d; color: #fff; border: none; }
-    .btn-red:hover { background: #e03d3d; }
     .btn-green { background: #28a745; color: #fff; border: none; }
 
     .row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
@@ -64,30 +92,24 @@
     .row input[type=text] { flex:1; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
     .row select { flex:1; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 12px; }
 
-    .toggle-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+    .toggle-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
     .toggle-btn {
-      padding: 5px 10px; font-size: 11px; border: 1px solid #ddd;
-      border-radius: 5px; cursor: pointer; background: #fafafa;
+      padding: 5px 8px; font-size: 11px; border: 1px solid #ddd;
+      border-radius: 5px; cursor: pointer; background: #f5f5f7;
     }
-    .toggle-btn.on { background: #2d6cf6; color: #fff; border-color: #2d6cf6; }
+    .toggle-btn.on { background: #7c8dfc; color: #fff; border-color: #7c8dfc; }
 
     /* Font picker */
     .font-wrap { position: relative; flex: 1; }
-    .font-input {
-      width: 100%; border: 1px solid #ddd; border-radius: 4px;
-      padding: 3px 5px; font-size: 12px;
-    }
+    .font-input { width: 100%; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
     .font-dropdown {
       position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
       background: #fff; border: 1px solid #ddd; border-radius: 6px;
-      max-height: 160px; overflow-y: auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      display: none;
+      max-height: 150px; overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none;
     }
     .font-dropdown.open { display: block; }
-    .font-option {
-      padding: 6px 10px; font-size: 12px; cursor: pointer;
-    }
+    .font-option { padding: 5px 10px; font-size: 12px; cursor: pointer; }
     .font-option:hover { background: #eef4ff; }
 
     /* Palette */
@@ -101,41 +123,39 @@
       position: absolute; top: -5px; right: -5px;
       background: #ff4d4d; color: #fff; border-radius: 50%;
       width: 13px; height: 13px; font-size: 9px;
-      display: none; align-items: center; justify-content: center;
-      cursor: pointer; line-height: 1;
+      display: none; align-items: center; justify-content: center; cursor: pointer;
     }
     .swatch:hover .del { display: flex; }
 
     /* Table Library */
     .table-item {
-      border: 1px solid #ddd; border-radius: 6px;
-      padding: 8px; margin-bottom: 6px;
+      border: 1px solid #ddd; border-radius: 6px; padding: 8px; margin-bottom: 6px;
       background: #fafafa; cursor: pointer;
       display: flex; justify-content: space-between; align-items: center;
     }
-    .table-item:hover { background: #eef4ff; border-color: #2d6cf6; }
+    .table-item:hover { background: #eef4ff; border-color: #7c8dfc; }
     .table-info { font-size: 11px; }
     .table-info b { font-size: 12px; display: block; margin-bottom: 2px; }
 
-    /* Style Library */
+    /* Style items */
     .style-item {
-      border: 1px solid #ddd; border-radius: 6px;
-      padding: 7px 10px; margin-bottom: 5px;
+      border: 1px solid #ddd; border-radius: 6px; padding: 7px 10px; margin-bottom: 5px;
       background: #fafafa; cursor: pointer;
       display: flex; justify-content: space-between; align-items: center;
     }
-    .style-item:hover { background: #eef4ff; border-color: #2d6cf6; }
+    .style-item:hover { background: #eef4ff; border-color: #7c8dfc; }
     .style-meta { font-size: 10px; color: #aaa; }
 
     #status {
-      font-size: 11px; margin: 4px 8px;
-      padding: 6px 10px; border-radius: 6px; display: none;
+      font-size: 11px; margin: 4px 8px; padding: 6px 10px;
+      border-radius: 6px; display: none;
     }
     #status.ok  { display: block; background: #e6f4ea; color: #2d7a3a; }
     #status.err { display: block; background: #fdecea; color: #c0392b; }
 
     .divider { border: none; border-top: 1px solid #eee; margin: 8px 0; }
     .hint { font-size: 10px; color: #aaa; margin-top: 4px; }
+    .sep { height: 4px; }
   </style>
 </head>
 <body>
@@ -151,51 +171,127 @@
 <!-- ===== SHAPES ===== -->
 <div id="tab-shapes" class="panel active">
 
+  <!-- ALIGN MODE -->
   <div class="section">
-    <div class="section-title">Align to Slide</div>
-    <div class="btn-grid-3">
-      <button onclick="alignShapes('left')">⬅ Left</button>
-      <button onclick="alignShapes('center')">↔ Center</button>
-      <button onclick="alignShapes('right')">➡ Right</button>
-      <button onclick="alignShapes('top')">⬆ Top</button>
-      <button onclick="alignShapes('middle')">↕ Middle</button>
-      <button onclick="alignShapes('bottom')">⬇ Bottom</button>
+    <div class="section-title">Align To</div>
+    <div class="align-mode">
+      <div class="align-mode-btn active" id="mode-slide" onclick="setAlignMode('slide')">🖥 Slide</div>
+      <div class="align-mode-btn" id="mode-selection" onclick="setAlignMode('selection')">⬜ Selection</div>
+    </div>
+
+    <div class="section-title">Align Objects</div>
+    <div class="icon-grid">
+      <!-- Align Left -->
+      <div class="icon-btn" onclick="alignShapes('left')" title="Align Left">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="2" height="12" fill="#555"/>
+          <rect x="5" y="6" width="9" height="3" rx="1" fill="#555"/>
+          <rect x="5" y="11" width="13" height="3" rx="1" fill="#555"/>
+        </svg>
+      </div>
+      <!-- Align Center H -->
+      <div class="icon-btn" onclick="alignShapes('center')" title="Align Center">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="9" y="2" width="2" height="16" fill="#555"/>
+          <rect x="4" y="5" width="12" height="3" rx="1" fill="#555"/>
+          <rect x="6" y="11" width="8" height="3" rx="1" fill="#555"/>
+        </svg>
+      </div>
+      <!-- Align Right -->
+      <div class="icon-btn" onclick="alignShapes('right')" title="Align Right">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="16" y="4" width="2" height="12" fill="#555"/>
+          <rect x="6" y="6" width="9" height="3" rx="1" fill="#555"/>
+          <rect x="2" y="11" width="13" height="3" rx="1" fill="#555"/>
+        </svg>
+      </div>
+      <!-- Align Top -->
+      <div class="icon-btn" onclick="alignShapes('top')" title="Align Top">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="2" width="12" height="2" fill="#555"/>
+          <rect x="6" y="5" width="3" height="9" rx="1" fill="#555"/>
+          <rect x="11" y="5" width="3" height="13" rx="1" fill="#555"/>
+        </svg>
+      </div>
+      <!-- Align Middle V -->
+      <div class="icon-btn" onclick="alignShapes('middle')" title="Align Middle">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="9" width="16" height="2" fill="#555"/>
+          <rect x="5" y="4" width="3" height="12" rx="1" fill="#555"/>
+          <rect x="11" y="6" width="3" height="8" rx="1" fill="#555"/>
+        </svg>
+      </div>
+      <!-- Align Bottom -->
+      <div class="icon-btn" onclick="alignShapes('bottom')" title="Align Bottom">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="16" width="12" height="2" fill="#555"/>
+          <rect x="6" y="4" width="3" height="11" rx="1" fill="#555"/>
+          <rect x="11" y="2" width="3" height="13" rx="1" fill="#555"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+    <div class="section-title">Distribute Objects</div>
+    <div class="icon-grid" style="grid-template-columns: repeat(4,1fr)">
+      <!-- Distribute H -->
+      <div class="icon-btn" onclick="distributeShapes('h')" title="Distribute Horizontal">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="4" width="2" height="12" fill="#555"/>
+          <rect x="16" y="4" width="2" height="12" fill="#555"/>
+          <rect x="8" y="6" width="4" height="8" rx="1" fill="#555"/>
+        </svg>
+      </div>
+      <!-- Distribute V -->
+      <div class="icon-btn" onclick="distributeShapes('v')" title="Distribute Vertical">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="2" width="12" height="2" fill="#555"/>
+          <rect x="4" y="16" width="12" height="2" fill="#555"/>
+          <rect x="6" y="8" width="8" height="4" rx="1" fill="#555"/>
+        </svg>
+      </div>
+      <!-- Match Width -->
+      <div class="icon-btn" onclick="matchSize('width')" title="Match Width">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="6" width="16" height="3" rx="1" fill="#555"/>
+          <rect x="2" y="11" width="16" height="3" rx="1" fill="#7c8dfc"/>
+          <rect x="2" y="5" width="16" height="1" fill="#555" opacity="0.3"/>
+        </svg>
+      </div>
+      <!-- Match Height -->
+      <div class="icon-btn" onclick="matchSize('height')" title="Match Height">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="2" width="3" height="16" rx="1" fill="#555"/>
+          <rect x="11" y="2" width="3" height="16" rx="1" fill="#7c8dfc"/>
+        </svg>
+      </div>
     </div>
   </div>
 
+  <!-- SHAPE CONVERT -->
   <div class="section">
-    <div class="section-title">Distribute & Match</div>
-    <div class="btn-grid-2">
-      <button onclick="distributeShapes('h')">↔ Distribute H</button>
-      <button onclick="distributeShapes('v')">↕ Distribute V</button>
-      <button onclick="matchSize('width')">= Width</button>
-      <button onclick="matchSize('height')">= Height</button>
-      <button onclick="matchSize('both')" style="grid-column:span 2">= Match Both</button>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Corner Radius</div>
+    <div class="section-title">Round Rectangle</div>
+    <button class="btn-blue" style="margin-top:0" onclick="convertToRoundRect()">
+      Convert to Round Rectangle
+    </button>
+    <div class="hint">* Converts selected shapes to Round Rectangle</div>
+    <hr class="divider">
+    <div class="section-title">Corner Radius (RoundRect only)</div>
     <div class="row">
-      <label>Radius</label>
-      <input type="range" id="cornerSlider" min="0" max="50" value="0"
-        oninput="document.getElementById('cornerVal').textContent=this.value">
-      <span class="val" id="cornerVal">0</span>
+      <label>Radius (pt)</label>
+      <input type="number" id="radiusInput" value="10" min="0" max="200" style="width:64px">
+      <button onclick="applyCornerRadius()" style="flex:1">Apply</button>
     </div>
-    <div class="btn-grid-2" style="margin-top:6px">
-      <button onclick="applyCornerRadius(document.getElementById('cornerSlider').value)">Apply Radius</button>
-      <button onclick="applyCornerRadiusAll(document.getElementById('cornerSlider').value)">Apply All Shapes</button>
-    </div>
-    <div class="hint">* Apply All: applies to every shape on the slide</div>
+    <div class="hint">* Select a Round Rectangle shape first</div>
   </div>
 
+  <!-- FILL & BORDER -->
   <div class="section">
     <div class="section-title">Fill & Opacity</div>
     <div class="row">
       <label>Fill Color</label>
-      <input type="color" id="fillColor" value="#4472C4"
-        oninput="applyFillColor(this.value)">
-      <span style="font-size:11px;color:#888">Live</span>
+      <input type="color" id="fillColor" value="#4472C4" oninput="applyFillColor(this.value)">
+      <span style="font-size:10px;color:#aaa">Live</span>
     </div>
     <div class="row">
       <label>Opacity %</label>
@@ -209,9 +305,8 @@
     <div class="section-title">Border</div>
     <div class="row">
       <label>Color</label>
-      <input type="color" id="borderColor" value="#000000"
-        oninput="applyBorderColor(this.value)">
-      <span style="font-size:11px;color:#888">Live</span>
+      <input type="color" id="borderColor" value="#000000" oninput="applyBorderColor(this.value)">
+      <span style="font-size:10px;color:#aaa">Live</span>
     </div>
     <div class="row">
       <label>Width (pt)</label>
@@ -221,9 +316,10 @@
     </div>
   </div>
 
+  <!-- SVG -->
   <div class="section">
     <div class="section-title">Insert SVG</div>
-    <textarea id="svg-input" style="width:100%;height:70px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;padding:6px;resize:vertical;margin-top:4px" placeholder="Paste SVG code here..."></textarea>
+    <textarea id="svg-input" style="width:100%;height:70px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;padding:6px;resize:vertical" placeholder="Paste SVG code here..."></textarea>
     <button class="btn-blue" onclick="insertSVG()">Insert SVG into Slide</button>
     <div class="hint">* After insert: right-click → Convert to Shape</div>
   </div>
@@ -233,11 +329,11 @@
 <!-- ===== TABLE ===== -->
 <div id="tab-table" class="panel">
   <div class="section">
-    <div class="section-title">Table Size</div>
+    <div class="section-title">Size</div>
     <div class="row">
       <label>Rows</label>
       <input type="number" id="tblRows" value="4" min="1" max="30">
-      <label style="min-width:40px">Cols</label>
+      <label style="min-width:36px">Cols</label>
       <input type="number" id="tblCols" value="4" min="1" max="20">
     </div>
     <div class="row">
@@ -254,21 +350,13 @@
 
   <div class="section">
     <div class="section-title">Header Row</div>
-    <div class="row">
-      <label>Background</label>
-      <input type="color" id="tblHeaderBg" value="#2d6cf6">
-    </div>
-    <div class="row">
-      <label>Text Color</label>
-      <input type="color" id="tblHeaderFg" value="#ffffff">
-    </div>
+    <div class="row"><label>Background</label><input type="color" id="tblHeaderBg" value="#2d6cf6"></div>
+    <div class="row"><label>Text Color</label><input type="color" id="tblHeaderFg" value="#ffffff"></div>
     <div class="row">
       <label>Font Size</label>
       <input type="number" id="tblHeaderSize" value="12" min="6" max="72">
-    </div>
-    <div class="row">
-      <label>Font</label>
-      <input type="text" id="tblHeaderFont" value="Calibri">
+      <label style="min-width:36px">Font</label>
+      <input type="text" id="tblHeaderFont" value="Calibri" style="width:80px;flex:none">
     </div>
     <div class="toggle-row">
       <span class="toggle-btn on" id="tblHeaderBold" onclick="toggleBtn(this)"><b>B</b></span>
@@ -287,25 +375,14 @@
 
   <div class="section">
     <div class="section-title">Body Rows</div>
-    <div class="row">
-      <label>Row Color 1</label>
-      <input type="color" id="tblRow1" value="#ffffff">
-    </div>
-    <div class="row">
-      <label>Row Color 2</label>
-      <input type="color" id="tblRow2" value="#f0f4ff">
-    </div>
-    <div class="row">
-      <label>Text Color</label>
-      <input type="color" id="tblBodyFg" value="#333333">
-    </div>
+    <div class="row"><label>Row Color 1</label><input type="color" id="tblRow1" value="#ffffff"></div>
+    <div class="row"><label>Row Color 2</label><input type="color" id="tblRow2" value="#f0f4ff"></div>
+    <div class="row"><label>Text Color</label><input type="color" id="tblBodyFg" value="#333333"></div>
     <div class="row">
       <label>Font Size</label>
       <input type="number" id="tblBodySize" value="11" min="6" max="72">
-    </div>
-    <div class="row">
-      <label>Font</label>
-      <input type="text" id="tblBodyFont" value="Calibri">
+      <label style="min-width:36px">Font</label>
+      <input type="text" id="tblBodyFont" value="Calibri" style="width:80px;flex:none">
     </div>
     <div class="row">
       <label>Align</label>
@@ -319,10 +396,7 @@
 
   <div class="section">
     <div class="section-title">Borders & Padding</div>
-    <div class="row">
-      <label>Border Color</label>
-      <input type="color" id="tblBorder" value="#cccccc">
-    </div>
+    <div class="row"><label>Border Color</label><input type="color" id="tblBorder" value="#cccccc"></div>
     <div class="row">
       <label>Border Width</label>
       <input type="range" id="tblBorderW" min="0" max="5" step="0.5" value="1"
@@ -350,172 +424,93 @@
 
 <!-- ===== TEXT ===== -->
 <div id="tab-text" class="panel">
-
   <div class="section">
     <div class="section-title">◆ Character</div>
-
     <div class="row">
       <label>Font</label>
       <div class="font-wrap">
         <input class="font-input" id="txtFont" type="text" value="Calibri"
-          oninput="filterFonts(this.value)" onfocus="openFontDropdown()" placeholder="Font name">
+          oninput="filterFonts(this.value)" onfocus="openFontDropdown()">
         <div class="font-dropdown" id="fontDropdown"></div>
       </div>
     </div>
-
     <div class="row">
       <label>Style</label>
-      <select id="txtStyle" onchange="liveApplyChar()">
+      <select id="txtStyle" onchange="liveChar()">
         <option value="normal">Regular</option>
         <option value="bold">Bold</option>
         <option value="italic">Italic</option>
         <option value="bolditalic">Bold Italic</option>
       </select>
     </div>
-
     <div class="row">
       <label>Size (pt)</label>
-      <input type="number" id="txtSize" value="24" min="1" max="400"
-        oninput="liveApplyChar()">
-      <label style="min-width:30px;font-size:11px">Lead</label>
-      <input type="number" id="txtLeadingPt" value="0" min="0" max="400"
-        oninput="liveApplyPara()">
+      <input type="number" id="txtSize" value="24" min="1" max="400" onchange="liveChar()">
     </div>
-    <div class="hint">Leading: 0 = Auto</div>
-
     <div class="row">
       <label>Color</label>
-      <input type="color" id="txtColor" value="#000000" oninput="liveApplyChar()">
+      <input type="color" id="txtColor" value="#000000" oninput="liveChar()">
     </div>
-
-    <hr class="divider">
-
-    <div class="row">
-      <label>Tracking</label>
-      <input type="range" id="txtTracking" min="-200" max="1000" value="0"
-        oninput="document.getElementById('txtTrackingVal').textContent=this.value; liveApplyChar()">
-      <span class="val" id="txtTrackingVal">0</span>
-    </div>
-
-    <div class="row">
-      <label>H Scale %</label>
-      <input type="number" id="txtHScale" value="100" min="1" max="500" oninput="liveApplyChar()">
-      <label style="min-width:40px;font-size:11px">V Scale</label>
-      <input type="number" id="txtVScale" value="100" min="1" max="500" oninput="liveApplyChar()">
-    </div>
-
-    <div class="row">
-      <label>Baseline</label>
-      <input type="number" id="txtBaseline" value="0" min="-200" max="200" oninput="liveApplyChar()">
-      <span style="font-size:11px;color:#aaa">pt</span>
-      <label style="min-width:30px;font-size:11px">Skew</label>
-      <input type="number" id="txtSkew" value="0" min="-85" max="85" oninput="liveApplyChar()">
-      <span style="font-size:11px;color:#aaa">°</span>
-    </div>
-
-    <hr class="divider">
-
     <div class="toggle-row">
       <span class="toggle-btn" id="txtBold"      onclick="toggleLive(this,'bold')"><b>B</b></span>
       <span class="toggle-btn" id="txtItalic"    onclick="toggleLive(this,'italic')"><i>I</i></span>
       <span class="toggle-btn" id="txtUnderline" onclick="toggleLive(this,'underline')"><u>U</u></span>
       <span class="toggle-btn" id="txtStrike"    onclick="toggleLive(this,'strikethrough')">S̶</span>
       <span class="toggle-btn" id="txtCaps"      onclick="toggleLive(this,'caps')">AA</span>
-      <span class="toggle-btn" id="txtSmallCaps" onclick="toggleLive(this,'smallCaps')">Aa</span>
       <span class="toggle-btn" id="txtSuper"     onclick="toggleLive(this,'superscript')">X²</span>
       <span class="toggle-btn" id="txtSub"       onclick="toggleLive(this,'subscript')">X₂</span>
     </div>
+    <button class="btn-blue" onclick="applyChar()">Apply Character</button>
   </div>
 
   <div class="section">
     <div class="section-title">◆ Paragraph</div>
-
     <div class="row">
       <label>Alignment</label>
-      <select id="txtAlign" onchange="liveApplyPara()">
+      <select id="txtAlign" onchange="liveParaAlign()">
         <option value="left">Left</option>
         <option value="center">Center</option>
         <option value="right">Right</option>
         <option value="justify">Justify</option>
-        <option value="distributed">Distributed</option>
       </select>
     </div>
-
-    <div class="row">
-      <label>Indent Left</label>
-      <input type="number" id="txtIndentLeft" value="0" min="0" max="500" oninput="liveApplyPara()">
-      <span style="font-size:11px;color:#aaa">pt</span>
-    </div>
-    <div class="row">
-      <label>Indent Right</label>
-      <input type="number" id="txtIndentRight" value="0" min="0" max="500" oninput="liveApplyPara()">
-      <span style="font-size:11px;color:#aaa">pt</span>
-    </div>
-    <div class="row">
-      <label>First Line</label>
-      <input type="number" id="txtFirstLine" value="0" min="-200" max="500" oninput="liveApplyPara()">
-      <span style="font-size:11px;color:#aaa">pt</span>
-    </div>
-    <div class="row">
-      <label>Space Before</label>
-      <input type="number" id="txtSpaceBefore" value="0" min="0" max="200" oninput="liveApplyPara()">
-      <span style="font-size:11px;color:#aaa">pt</span>
-    </div>
-    <div class="row">
-      <label>Space After</label>
-      <input type="number" id="txtSpaceAfter" value="0" min="0" max="200" oninput="liveApplyPara()">
-      <span style="font-size:11px;color:#aaa">pt</span>
-    </div>
-    <div class="row">
-      <label>Line Spacing</label>
-      <input type="range" id="txtLineSpacing" min="50" max="400" value="100"
-        oninput="document.getElementById('txtLineSpacingVal').textContent=this.value+'%'; liveApplyPara()">
-      <span class="val" id="txtLineSpacingVal">100%</span>
-    </div>
+    <button class="btn-blue" onclick="applyPara()">Apply Paragraph</button>
   </div>
 
   <div class="section">
     <div class="section-title">◆ Paragraph Styles</div>
     <div class="btn-grid-2">
-      <button class="btn-green" onclick="saveParaStyle()">💾 Save Style</button>
+      <button class="btn-green" onclick="saveParaStyle()">💾 Save</button>
       <button class="btn-red" onclick="clearParaStyles()">🗑 Clear</button>
     </div>
     <div id="paraStyleLibrary" style="margin-top:8px"></div>
   </div>
-
 </div>
 
 <!-- ===== COLORS ===== -->
 <div id="tab-colors" class="panel">
   <div class="section">
-    <div class="section-title">My Color Palette</div>
+    <div class="section-title">My Palette</div>
     <div class="palette-grid" id="paletteGrid"></div>
     <div class="row" style="margin-top:8px">
       <input type="color" id="newColor" value="#4472C4">
       <input type="text" id="newColorName" placeholder="Name (optional)">
-      <button onclick="addColor()">+ Add</button>
+      <button onclick="addColor()">+</button>
     </div>
   </div>
   <div class="section">
     <div class="section-title">Apply to Selected</div>
-    <div style="font-size:11px;color:#888;margin-bottom:6px">Click color then apply</div>
     <div class="palette-grid" id="applyPaletteGrid"></div>
     <div id="selectedColorPreview" style="font-size:11px;color:#555;margin-top:6px"></div>
     <div class="btn-grid-2" style="margin-top:8px">
-      <button onclick="applyColorToSelected('fill')">Apply Fill</button>
-      <button onclick="applyColorToSelected('border')">Apply Border</button>
+      <button onclick="applyColorToSelected('fill')">Fill</button>
+      <button onclick="applyColorToSelected('border')">Border</button>
     </div>
   </div>
   <div class="section">
     <div class="section-title">Bulk Replace</div>
-    <div class="row">
-      <label>Find</label>
-      <input type="color" id="findColor" value="#4472C4">
-    </div>
-    <div class="row">
-      <label>Replace</label>
-      <input type="color" id="replaceColor" value="#ff0000">
-    </div>
+    <div class="row"><label>Find</label><input type="color" id="findColor" value="#4472C4"></div>
+    <div class="row"><label>Replace</label><input type="color" id="replaceColor" value="#ff0000"></div>
     <button class="btn-blue" onclick="bulkColorReplace()">Replace All on Slide</button>
   </div>
 </div>
@@ -530,13 +525,7 @@
     </div>
     <div class="row">
       <label>Color</label>
-      <input type="color" id="gridColor" value="#e0e0e0">
-    </div>
-    <div class="row">
-      <label>Opacity %</label>
-      <input type="range" id="gridOpacity" min="10" max="100" value="40"
-        oninput="document.getElementById('gridOpacityVal').textContent=this.value">
-      <span class="val" id="gridOpacityVal">40</span>
+      <input type="color" id="gridColor" value="#cccccc">
     </div>
     <div class="btn-grid-2" style="margin-top:6px">
       <button onclick="addGrid()">+ Add Grid</button>
