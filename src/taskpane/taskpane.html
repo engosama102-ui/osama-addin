@@ -9,15 +9,13 @@
 
     .tabs {
       display: flex; background: #1e1e2e;
-      position: sticky; top: 0; z-index: 10;
-      overflow-x: auto;
+      position: sticky; top: 0; z-index: 10; overflow-x: auto;
     }
     .tab {
       flex: 1; padding: 10px 4px; text-align: center;
       font-size: 10px; cursor: pointer; border: none;
       background: none; color: #888; white-space: nowrap;
-      border-bottom: 2px solid transparent;
-      min-width: 44px; transition: all 0.15s;
+      border-bottom: 2px solid transparent; min-width: 44px;
     }
     .tab.active { color: #7c8dfc; border-bottom-color: #7c8dfc; font-weight: bold; }
 
@@ -34,35 +32,25 @@
       text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
     }
 
-    /* Icon Buttons */
-    .icon-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 4px;
-    }
-    .icon-btn {
-      aspect-ratio: 1;
-      display: flex; align-items: center; justify-content: center;
-      background: #f5f5f7; border: 1px solid #e0e0e0;
-      border-radius: 6px; cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-      padding: 4px;
-    }
-    .icon-btn:hover { background: #e8edff; border-color: #7c8dfc; }
-    .icon-btn svg { width: 18px; height: 18px; }
-    .icon-btn.active { background: #7c8dfc; border-color: #7c8dfc; }
-    .icon-btn.active svg { filter: brightness(10); }
-
-    /* Align mode toggle */
-    .align-mode {
-      display: flex; gap: 4px; margin-bottom: 8px;
-    }
+    /* Align mode */
+    .align-mode { display: flex; gap: 4px; margin-bottom: 8px; }
     .align-mode-btn {
       flex: 1; padding: 5px; font-size: 10px; text-align: center;
       border: 1px solid #ddd; border-radius: 6px; cursor: pointer;
-      background: #f5f5f7; color: #666; transition: all 0.15s;
+      background: #f5f5f7; color: #666;
     }
     .align-mode-btn.active { background: #1e1e2e; color: #fff; border-color: #1e1e2e; }
+
+    /* Icon grid */
+    .icon-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 4px; }
+    .icon-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; }
+    .icon-btn {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      background: #f5f5f7; border: 1px solid #e0e0e0; border-radius: 6px;
+      cursor: pointer; padding: 5px; transition: all 0.15s;
+    }
+    .icon-btn:hover { background: #e8edff; border-color: #7c8dfc; }
+    .icon-btn svg { width: 18px; height: 18px; }
 
     .btn-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
     .btn-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
@@ -70,7 +58,7 @@
     button {
       padding: 7px 4px; font-size: 11px; cursor: pointer;
       border: 1px solid #ddd; border-radius: 6px;
-      background: #f5f5f7; color: #333; transition: background 0.15s;
+      background: #f5f5f7; color: #333;
     }
     button:hover { background: #e8e8e8; }
 
@@ -88,7 +76,7 @@
     .row input[type=range] { flex: 1; }
     .row span.val { font-size: 11px; min-width: 28px; text-align: right; }
     .row input[type=color] { width: 32px; height: 26px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; padding: 1px; }
-    .row input[type=number] { width: 56px; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
+    .row input[type=number] { width: 60px; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
     .row input[type=text] { flex:1; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
     .row select { flex:1; border: 1px solid #ddd; border-radius: 4px; padding: 4px; font-size: 12px; }
 
@@ -99,18 +87,27 @@
     }
     .toggle-btn.on { background: #7c8dfc; color: #fff; border-color: #7c8dfc; }
 
-    /* Font picker */
-    .font-wrap { position: relative; flex: 1; }
-    .font-input { width: 100%; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
-    .font-dropdown {
-      position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
-      background: #fff; border: 1px solid #ddd; border-radius: 6px;
-      max-height: 150px; overflow-y: auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none;
+    /* Shape Library */
+    .shape-grid {
+      display: grid; grid-template-columns: repeat(5,1fr); gap: 5px; margin-top: 6px;
     }
-    .font-dropdown.open { display: block; }
-    .font-option { padding: 5px 10px; font-size: 12px; cursor: pointer; }
-    .font-option:hover { background: #eef4ff; }
+    .shape-item {
+      aspect-ratio: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: #f5f5f7; border: 1px solid #e0e0e0;
+      border-radius: 8px; cursor: pointer; padding: 4px;
+      transition: all 0.15s; position: relative;
+    }
+    .shape-item:hover { background: #e8edff; border-color: #7c8dfc; }
+    .shape-item svg { width: 28px; height: 28px; }
+    .shape-item span { font-size: 8px; color: #888; margin-top: 2px; text-align: center; line-height: 1.2; }
+    .shape-item .del-shape {
+      position: absolute; top: -4px; right: -4px;
+      background: #ff4d4d; color: #fff; border-radius: 50%;
+      width: 14px; height: 14px; font-size: 9px;
+      display: none; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .shape-item:hover .del-shape { display: flex; }
 
     /* Palette */
     .palette-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
@@ -137,7 +134,6 @@
     .table-info { font-size: 11px; }
     .table-info b { font-size: 12px; display: block; margin-bottom: 2px; }
 
-    /* Style items */
     .style-item {
       border: 1px solid #ddd; border-radius: 6px; padding: 7px 10px; margin-bottom: 5px;
       background: #fafafa; cursor: pointer;
@@ -145,6 +141,19 @@
     }
     .style-item:hover { background: #eef4ff; border-color: #7c8dfc; }
     .style-meta { font-size: 10px; color: #aaa; }
+
+    /* Font picker */
+    .font-wrap { position: relative; flex: 1; }
+    .font-input { width: 100%; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
+    .font-dropdown {
+      position: absolute; top: 100%; left: 0; right: 0; z-index: 100;
+      background: #fff; border: 1px solid #ddd; border-radius: 6px;
+      max-height: 150px; overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none;
+    }
+    .font-dropdown.open { display: block; }
+    .font-option { padding: 5px 10px; font-size: 12px; cursor: pointer; }
+    .font-option:hover { background: #eef4ff; }
 
     #status {
       font-size: 11px; margin: 4px 8px; padding: 6px 10px;
@@ -155,134 +164,86 @@
 
     .divider { border: none; border-top: 1px solid #eee; margin: 8px 0; }
     .hint { font-size: 10px; color: #aaa; margin-top: 4px; }
-    .sep { height: 4px; }
+
+    textarea {
+      width: 100%; height: 60px; font-size: 11px; font-family: monospace;
+      border: 1px solid #ddd; border-radius: 6px; padding: 6px; resize: vertical;
+    }
   </style>
 </head>
 <body>
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('shapes')">Shapes</button>
+  <button class="tab" onclick="switchTab('library')">Library</button>
   <button class="tab" onclick="switchTab('table')">Table</button>
   <button class="tab" onclick="switchTab('text')">Text</button>
   <button class="tab" onclick="switchTab('colors')">Colors</button>
-  <button class="tab" onclick="switchTab('canvas')">Canvas</button>
 </div>
 
 <!-- ===== SHAPES ===== -->
 <div id="tab-shapes" class="panel active">
 
-  <!-- ALIGN MODE -->
   <div class="section">
     <div class="section-title">Align To</div>
     <div class="align-mode">
       <div class="align-mode-btn active" id="mode-slide" onclick="setAlignMode('slide')">🖥 Slide</div>
-      <div class="align-mode-btn" id="mode-selection" onclick="setAlignMode('selection')">⬜ Selection</div>
+      <div class="align-mode-btn" id="mode-sel" onclick="setAlignMode('selection')">⬜ Selection</div>
     </div>
-
-    <div class="section-title">Align Objects</div>
+    <div class="section-title">Align</div>
     <div class="icon-grid">
-      <!-- Align Left -->
       <div class="icon-btn" onclick="alignShapes('left')" title="Align Left">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="4" width="2" height="12" fill="#555"/>
-          <rect x="5" y="6" width="9" height="3" rx="1" fill="#555"/>
-          <rect x="5" y="11" width="13" height="3" rx="1" fill="#555"/>
-        </svg>
+        <svg viewBox="0 0 20 20"><rect x="2" y="4" width="2" height="12" fill="#444"/><rect x="5" y="6" width="8" height="3" rx="1" fill="#444"/><rect x="5" y="11" width="12" height="3" rx="1" fill="#444"/></svg>
       </div>
-      <!-- Align Center H -->
-      <div class="icon-btn" onclick="alignShapes('center')" title="Align Center">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="9" y="2" width="2" height="16" fill="#555"/>
-          <rect x="4" y="5" width="12" height="3" rx="1" fill="#555"/>
-          <rect x="6" y="11" width="8" height="3" rx="1" fill="#555"/>
-        </svg>
+      <div class="icon-btn" onclick="alignShapes('center')" title="Align Center H">
+        <svg viewBox="0 0 20 20"><rect x="9" y="2" width="2" height="16" fill="#444"/><rect x="3" y="5" width="14" height="3" rx="1" fill="#444"/><rect x="5" y="11" width="10" height="3" rx="1" fill="#444"/></svg>
       </div>
-      <!-- Align Right -->
       <div class="icon-btn" onclick="alignShapes('right')" title="Align Right">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="16" y="4" width="2" height="12" fill="#555"/>
-          <rect x="6" y="6" width="9" height="3" rx="1" fill="#555"/>
-          <rect x="2" y="11" width="13" height="3" rx="1" fill="#555"/>
-        </svg>
+        <svg viewBox="0 0 20 20"><rect x="16" y="4" width="2" height="12" fill="#444"/><rect x="7" y="6" width="8" height="3" rx="1" fill="#444"/><rect x="3" y="11" width="12" height="3" rx="1" fill="#444"/></svg>
       </div>
-      <!-- Align Top -->
       <div class="icon-btn" onclick="alignShapes('top')" title="Align Top">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="4" y="2" width="12" height="2" fill="#555"/>
-          <rect x="6" y="5" width="3" height="9" rx="1" fill="#555"/>
-          <rect x="11" y="5" width="3" height="13" rx="1" fill="#555"/>
-        </svg>
+        <svg viewBox="0 0 20 20"><rect x="4" y="2" width="12" height="2" fill="#444"/><rect x="5.5" y="5" width="3" height="8" rx="1" fill="#444"/><rect x="11.5" y="5" width="3" height="12" rx="1" fill="#444"/></svg>
       </div>
-      <!-- Align Middle V -->
-      <div class="icon-btn" onclick="alignShapes('middle')" title="Align Middle">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="9" width="16" height="2" fill="#555"/>
-          <rect x="5" y="4" width="3" height="12" rx="1" fill="#555"/>
-          <rect x="11" y="6" width="3" height="8" rx="1" fill="#555"/>
-        </svg>
+      <div class="icon-btn" onclick="alignShapes('middle')" title="Align Middle V">
+        <svg viewBox="0 0 20 20"><rect x="2" y="9" width="16" height="2" fill="#444"/><rect x="5" y="3" width="3" height="14" rx="1" fill="#444"/><rect x="12" y="6" width="3" height="8" rx="1" fill="#444"/></svg>
       </div>
-      <!-- Align Bottom -->
       <div class="icon-btn" onclick="alignShapes('bottom')" title="Align Bottom">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="4" y="16" width="12" height="2" fill="#555"/>
-          <rect x="6" y="4" width="3" height="11" rx="1" fill="#555"/>
-          <rect x="11" y="2" width="3" height="13" rx="1" fill="#555"/>
-        </svg>
+        <svg viewBox="0 0 20 20"><rect x="4" y="16" width="12" height="2" fill="#444"/><rect x="5.5" y="5" width="3" height="10" rx="1" fill="#444"/><rect x="11.5" y="3" width="3" height="12" rx="1" fill="#444"/></svg>
       </div>
     </div>
 
-    <div class="sep"></div>
-    <div class="section-title">Distribute Objects</div>
-    <div class="icon-grid" style="grid-template-columns: repeat(4,1fr)">
-      <!-- Distribute H -->
+    <div style="height:6px"></div>
+    <div class="section-title">Distribute & Match</div>
+    <div class="icon-grid-4">
       <div class="icon-btn" onclick="distributeShapes('h')" title="Distribute Horizontal">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="4" width="2" height="12" fill="#555"/>
-          <rect x="16" y="4" width="2" height="12" fill="#555"/>
-          <rect x="8" y="6" width="4" height="8" rx="1" fill="#555"/>
-        </svg>
+        <svg viewBox="0 0 20 20"><rect x="2" y="5" width="2" height="10" fill="#444"/><rect x="16" y="5" width="2" height="10" fill="#444"/><rect x="8" y="7" width="4" height="6" rx="1" fill="#444"/></svg>
       </div>
-      <!-- Distribute V -->
       <div class="icon-btn" onclick="distributeShapes('v')" title="Distribute Vertical">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="4" y="2" width="12" height="2" fill="#555"/>
-          <rect x="4" y="16" width="12" height="2" fill="#555"/>
-          <rect x="6" y="8" width="8" height="4" rx="1" fill="#555"/>
-        </svg>
+        <svg viewBox="0 0 20 20"><rect x="5" y="2" width="10" height="2" fill="#444"/><rect x="5" y="16" width="10" height="2" fill="#444"/><rect x="7" y="8" width="6" height="4" rx="1" fill="#444"/></svg>
       </div>
-      <!-- Match Width -->
       <div class="icon-btn" onclick="matchSize('width')" title="Match Width">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="6" width="16" height="3" rx="1" fill="#555"/>
-          <rect x="2" y="11" width="16" height="3" rx="1" fill="#7c8dfc"/>
-          <rect x="2" y="5" width="16" height="1" fill="#555" opacity="0.3"/>
-        </svg>
+        <svg viewBox="0 0 20 20"><rect x="2" y="5" width="16" height="4" rx="1" fill="#444"/><rect x="2" y="11" width="16" height="4" rx="1" fill="#7c8dfc"/></svg>
       </div>
-      <!-- Match Height -->
       <div class="icon-btn" onclick="matchSize('height')" title="Match Height">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="6" y="2" width="3" height="16" rx="1" fill="#555"/>
-          <rect x="11" y="2" width="3" height="16" rx="1" fill="#7c8dfc"/>
-        </svg>
+        <svg viewBox="0 0 20 20"><rect x="5" y="2" width="4" height="16" rx="1" fill="#444"/><rect x="11" y="2" width="4" height="16" rx="1" fill="#7c8dfc"/></svg>
       </div>
     </div>
   </div>
 
-  <!-- SHAPE CONVERT -->
+  <!-- ROUND RECT -->
   <div class="section">
     <div class="section-title">Round Rectangle</div>
     <button class="btn-blue" style="margin-top:0" onclick="convertToRoundRect()">
       Convert to Round Rectangle
     </button>
-    <div class="hint">* Converts selected shapes to Round Rectangle</div>
     <hr class="divider">
-    <div class="section-title">Corner Radius (RoundRect only)</div>
+    <div class="section-title">Corner Radius (pt) — RoundRect only</div>
     <div class="row">
       <label>Radius (pt)</label>
-      <input type="number" id="radiusInput" value="10" min="0" max="200" style="width:64px">
+      <input type="number" id="radiusInput" value="8" min="0" max="500" style="width:64px">
       <button onclick="applyCornerRadius()" style="flex:1">Apply</button>
     </div>
-    <div class="hint">* Select a Round Rectangle shape first</div>
+    <div class="hint">Works on Round Rectangle shapes only</div>
   </div>
 
   <!-- FILL & BORDER -->
@@ -316,12 +277,27 @@
     </div>
   </div>
 
-  <!-- SVG -->
+</div>
+
+<!-- ===== LIBRARY ===== -->
+<div id="tab-library" class="panel">
+
+  <!-- STANDARD SHAPES -->
   <div class="section">
-    <div class="section-title">Insert SVG</div>
-    <textarea id="svg-input" style="width:100%;height:70px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;padding:6px;resize:vertical" placeholder="Paste SVG code here..."></textarea>
-    <button class="btn-blue" onclick="insertSVG()">Insert SVG into Slide</button>
-    <div class="hint">* After insert: right-click → Convert to Shape</div>
+    <div class="section-title">Standard Shapes</div>
+    <div class="shape-grid" id="standardShapeGrid"></div>
+  </div>
+
+  <!-- CUSTOM SVG LIBRARY -->
+  <div class="section">
+    <div class="section-title">My SVG Library</div>
+    <textarea id="svg-input" placeholder="Paste SVG code here to add to library..."></textarea>
+    <div class="row" style="margin-top:6px">
+      <input type="text" id="svgName" placeholder="Name (optional)">
+      <button onclick="addSVGToLibrary()" style="flex:none;padding:7px 12px">+ Add</button>
+    </div>
+    <div class="shape-grid" id="svgLibraryGrid" style="margin-top:8px"></div>
+    <div class="hint" style="margin-top:6px">Click shape to insert • Right-click → Convert to Shape after insert</div>
   </div>
 
 </div>
@@ -331,30 +307,24 @@
   <div class="section">
     <div class="section-title">Size</div>
     <div class="row">
-      <label>Rows</label>
-      <input type="number" id="tblRows" value="4" min="1" max="30">
-      <label style="min-width:36px">Cols</label>
-      <input type="number" id="tblCols" value="4" min="1" max="20">
+      <label>Rows</label><input type="number" id="tblRows" value="4" min="1" max="30">
+      <label style="min-width:36px">Cols</label><input type="number" id="tblCols" value="4" min="1" max="20">
     </div>
     <div class="row">
-      <label>Row Height</label>
-      <input type="number" id="tblRowH" value="40" min="15" max="300">
+      <label>Row Height</label><input type="number" id="tblRowH" value="40" min="15" max="300">
       <span style="font-size:11px;color:#aaa">pt</span>
     </div>
     <div class="row">
-      <label>Col Width</label>
-      <input type="number" id="tblColW" value="0" min="0">
+      <label>Col Width</label><input type="number" id="tblColW" value="0" min="0">
       <span style="font-size:10px;color:#aaa">0=auto</span>
     </div>
   </div>
-
   <div class="section">
     <div class="section-title">Header Row</div>
     <div class="row"><label>Background</label><input type="color" id="tblHeaderBg" value="#2d6cf6"></div>
     <div class="row"><label>Text Color</label><input type="color" id="tblHeaderFg" value="#ffffff"></div>
     <div class="row">
-      <label>Font Size</label>
-      <input type="number" id="tblHeaderSize" value="12" min="6" max="72">
+      <label>Font Size</label><input type="number" id="tblHeaderSize" value="12" min="6" max="72">
       <label style="min-width:36px">Font</label>
       <input type="text" id="tblHeaderFont" value="Calibri" style="width:80px;flex:none">
     </div>
@@ -372,15 +342,13 @@
       </select>
     </div>
   </div>
-
   <div class="section">
     <div class="section-title">Body Rows</div>
     <div class="row"><label>Row Color 1</label><input type="color" id="tblRow1" value="#ffffff"></div>
     <div class="row"><label>Row Color 2</label><input type="color" id="tblRow2" value="#f0f4ff"></div>
     <div class="row"><label>Text Color</label><input type="color" id="tblBodyFg" value="#333333"></div>
     <div class="row">
-      <label>Font Size</label>
-      <input type="number" id="tblBodySize" value="11" min="6" max="72">
+      <label>Font Size</label><input type="number" id="tblBodySize" value="11" min="6" max="72">
       <label style="min-width:36px">Font</label>
       <input type="text" id="tblBodyFont" value="Calibri" style="width:80px;flex:none">
     </div>
@@ -393,7 +361,6 @@
       </select>
     </div>
   </div>
-
   <div class="section">
     <div class="section-title">Borders & Padding</div>
     <div class="row"><label>Border Color</label><input type="color" id="tblBorder" value="#cccccc"></div>
@@ -404,14 +371,11 @@
       <span class="val" id="tblBorderWVal">1</span>
     </div>
     <div class="row">
-      <label>Cell Padding</label>
-      <input type="number" id="tblPadding" value="5" min="0" max="30">
+      <label>Padding</label><input type="number" id="tblPadding" value="5" min="0" max="30">
       <span style="font-size:11px;color:#aaa">pt</span>
     </div>
   </div>
-
-  <button class="btn-blue" style="margin: 0 0 8px; width:100%" onclick="createTable()">➕ Insert Table</button>
-
+  <button class="btn-blue" style="margin:0 0 8px;width:100%" onclick="createTable()">➕ Insert Table</button>
   <div class="section">
     <div class="section-title">Table Library</div>
     <div class="btn-grid-2">
@@ -462,23 +426,20 @@
     </div>
     <button class="btn-blue" onclick="applyChar()">Apply Character</button>
   </div>
-
   <div class="section">
     <div class="section-title">◆ Paragraph</div>
     <div class="row">
       <label>Alignment</label>
-      <select id="txtAlign" onchange="liveParaAlign()">
+      <select id="txtAlign" onchange="applyPara()">
         <option value="left">Left</option>
         <option value="center">Center</option>
         <option value="right">Right</option>
         <option value="justify">Justify</option>
       </select>
     </div>
-    <button class="btn-blue" onclick="applyPara()">Apply Paragraph</button>
   </div>
-
   <div class="section">
-    <div class="section-title">◆ Paragraph Styles</div>
+    <div class="section-title">◆ Styles</div>
     <div class="btn-grid-2">
       <button class="btn-green" onclick="saveParaStyle()">💾 Save</button>
       <button class="btn-red" onclick="clearParaStyles()">🗑 Clear</button>
@@ -494,7 +455,7 @@
     <div class="palette-grid" id="paletteGrid"></div>
     <div class="row" style="margin-top:8px">
       <input type="color" id="newColor" value="#4472C4">
-      <input type="text" id="newColorName" placeholder="Name (optional)">
+      <input type="text" id="newColorName" placeholder="Name">
       <button onclick="addColor()">+</button>
     </div>
   </div>
@@ -512,46 +473,6 @@
     <div class="row"><label>Find</label><input type="color" id="findColor" value="#4472C4"></div>
     <div class="row"><label>Replace</label><input type="color" id="replaceColor" value="#ff0000"></div>
     <button class="btn-blue" onclick="bulkColorReplace()">Replace All on Slide</button>
-  </div>
-</div>
-
-<!-- ===== CANVAS ===== -->
-<div id="tab-canvas" class="panel">
-  <div class="section">
-    <div class="section-title">Grid</div>
-    <div class="row">
-      <label>Size (pt)</label>
-      <input type="number" id="gridSize" value="50" min="5" max="300">
-    </div>
-    <div class="row">
-      <label>Color</label>
-      <input type="color" id="gridColor" value="#cccccc">
-    </div>
-    <div class="btn-grid-2" style="margin-top:6px">
-      <button onclick="addGrid()">+ Add Grid</button>
-      <button class="btn-red" onclick="removeGrid()">✕ Remove</button>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title">Guides</div>
-    <div class="row">
-      <label>Position (pt)</label>
-      <input type="number" id="guidePos" value="100" min="0">
-    </div>
-    <div class="row">
-      <label>Color</label>
-      <input type="color" id="guideColor" value="#ff6600">
-    </div>
-    <div class="btn-grid-2" style="margin-top:6px">
-      <button onclick="addGuide('h')">— Horizontal</button>
-      <button onclick="addGuide('v')">| Vertical</button>
-    </div>
-    <button class="btn-red" style="width:100%;margin-top:5px" onclick="removeGuides()">✕ Remove All Guides</button>
-  </div>
-  <div class="section">
-    <div class="section-title">Slide Info</div>
-    <button class="btn-blue" style="margin-top:0" onclick="showSlideInfo()">Show Slide Size</button>
-    <div id="slideInfo" style="font-size:11px;color:#555;margin-top:6px"></div>
   </div>
 </div>
 
