@@ -8,9 +8,9 @@
   <Description DefaultValue="Professional design tools for PowerPoint — alignment, shapes, tables, colors, typography."/>
   <IconUrl DefaultValue="https://www.contoso.com/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://www.contoso.com/assets/icon-64.png"/>
-  <SupportUrl DefaultValue="https://localhost:3000"/>
+  <SupportUrl DefaultValue="https://engosama102-ui.github.io/osama-addin"/>
   <AppDomains>
-    <AppDomain>https://localhost:3000</AppDomain>
+    <AppDomain>https://engosama102-ui.github.io/osama-addin</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Presentation"/>
@@ -67,7 +67,7 @@
         <bt:Image id="Icon.80x80" DefaultValue="https://www.contoso.com/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://localhost:3000"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://engosama102-ui.github.io/osama-addin"/>
         <bt:Url id="Commands.Url" DefaultValue="https://www.contoso.com/commands.html"/>
         <bt:Url id="Taskpane.Url" DefaultValue="https://www.contoso.com/taskpane.html"/>
       </bt:Urls>
