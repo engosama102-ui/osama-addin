@@ -6,17 +6,17 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Osama Addin"/>
   <Description DefaultValue="Professional design tools for PowerPoint — alignment, shapes, tables, colors, typography."/>
-  <IconUrl DefaultValue="https://engosama102-ui.github.io/osama-addin/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://engosama102-ui.github.io/osama-addin/assets/icon-64.png"/>
-  <SupportUrl DefaultValue="https://engosama102-ui.github.io/osama-addin"/>
+  <IconUrl DefaultValue="https://www.contoso.com/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://www.contoso.com/assets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://localhost:3000"/>
   <AppDomains>
-    <AppDomain>https://engosama102-ui.github.io</AppDomain>
+    <AppDomain>https://localhost:3000</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Presentation"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://engosama102-ui.github.io/osama-addin/taskpane.html"/>
+    <SourceLocation DefaultValue="https://www.contoso.com/taskpane.html"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -62,14 +62,14 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://engosama102-ui.github.io/osama-addin/assets/icon-16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://engosama102-ui.github.io/osama-addin/assets/icon-32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://engosama102-ui.github.io/osama-addin/assets/icon-80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://www.contoso.com/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://www.contoso.com/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://www.contoso.com/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://engosama102-ui.github.io/osama-addin"/>
-        <bt:Url id="Commands.Url" DefaultValue="https://engosama102-ui.github.io/osama-addin/commands.html"/>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://engosama102-ui.github.io/osama-addin/taskpane.html"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://localhost:3000"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://www.contoso.com/commands.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://www.contoso.com/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Osama Addin is ready!"/>

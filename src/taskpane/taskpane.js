@@ -1,9 +1,6 @@
 Office.onReady(() => {
-  loadPaletteUI();
-  renderStandardShapes();
   loadSVGLibraryUI();
-  loadGradientLibraryUI();
-  updateGradientPreview();
+  renderFillColorWindow();
 });
 
 // ── STATUS ────────────────────────────────────────────
@@ -13,43 +10,24 @@ function showStatus(msg, type='ok') {
   setTimeout(() => el.className='', 3000);
 }
 
-// ── FILL MODE ─────────────────────────────────────────
-function setFillMode(mode) {
-  document.querySelectorAll('.fill-tab').forEach((t,i) =>
-    t.classList.toggle('active', ['solid','gradient'][i]===mode));
-  document.querySelectorAll('.fill-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('fill-'+mode).classList.add('active');
+// ── FILL COLOR (live) ─────────────────────────────────
+function onFillColorInput(hex) {
+  const field = document.getElementById('fillHex');
+  if (field) field.value = hex;
+  applyFillColor(hex);
+  addRecentFillColor(hex);
 }
 
-// ── FILL COLOR (live) ─────────────────────────────────
 async function applyFillColor(hex) {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/fill/type");
+      shapes.load("items/left,items/top,items/width,items/height,items/fill/type");
       await context.sync();
       shapes.items.forEach(s => { try { s.fill.setSolidColor(hex); } catch(e){} });
       await context.sync();
     });
-  } catch(e){}
-}
-
-// ── EYEDROPPER ────────────────────────────────────────
-async function eyedropperFill() {
-  try {
-    await PowerPoint.run(async (context) => {
-      const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/fill/foregroundColor");
-      await context.sync();
-      if (!shapes.items.length) return showStatus("Select a shape first","err");
-      const color = shapes.items[0].fill.foregroundColor;
-      if (color) {
-        document.getElementById('fillColor').value = color.startsWith('#') ? color : '#'+color;
-        document.getElementById('newColor').value  = document.getElementById('fillColor').value;
-        showStatus(`✓ Color picked: ${color}`);
-      }
-    });
-  } catch(e) { showStatus("Error: "+e.message,"err"); }
+  } catch(e) {}
 }
 
 // ── GRADIENT ──────────────────────────────────────────
@@ -69,7 +47,7 @@ async function applyGradient() {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/fill/type");
+      shapes.load("items/left,items/top,items/width,items/height,items/fill/type");
       await context.sync();
       if (!shapes.items.length) return showStatus("Select shapes first","err");
 
@@ -144,7 +122,7 @@ async function applyOpacity(value) {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/fill/type");
+      shapes.load("items/left,items/top,items/width,items/height,items/fill/type");
       await context.sync();
       shapes.items.forEach(s => { try { s.fill.transparency=1-parseFloat(value)/100; } catch(e){} });
       await context.sync();
@@ -157,7 +135,7 @@ async function applyBorderColor(hex) {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/lineFormat/color");
+      shapes.load("items/left,items/top,items/width,items/height,items/lineFormat/color");
       await context.sync();
       shapes.items.forEach(s => { try { s.lineFormat.color=hex; s.lineFormat.visible=true; } catch(e){} });
       await context.sync();
@@ -170,7 +148,7 @@ async function applyBorderWidth(value) {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/lineFormat/weight");
+      shapes.load("items/left,items/top,items/width,items/height,items/lineFormat/weight");
       await context.sync();
       const pt=parseFloat(value);
       shapes.items.forEach(s => {
@@ -225,35 +203,71 @@ async function convertToRoundRect() {
 }
 
 // ── CORNER RADIUS ─────────────────────────────────────
-async function applyCornerRadius() {
-  const radiusPt = parseFloat(document.getElementById('radiusInput').value);
-  if (isNaN(radiusPt) || radiusPt < 0) return showStatus("Enter valid radius","err");
+async function applyCornerRadius(radiusPt) {
+  radiusPt = parseFloat(radiusPt);
+  if (isNaN(radiusPt) || radiusPt < 0) return;
 
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/width,items/height");
+      shapes.load("items/left,items/top,items/width,items/height,items/type,items/adjustments");
       await context.sync();
 
-      if (!shapes.items.length) return showStatus("Select shapes first","err");
+      if (!shapes.items.length) return;
 
-      let applied=0;
+      let applied = 0;
       for (const shape of shapes.items) {
         try {
+          if (shape.type !== PowerPoint.ShapeType.geometricShape) continue;
           const shortSide = Math.min(shape.width, shape.height);
-          const adjValue  = Math.min(radiusPt / shortSide, 0.5);
-          shape.adjustments.load("items");
-          await context.sync();
-          if (shape.adjustments.items && shape.adjustments.items.length > 0) {
-            shape.adjustments.items[0].value = adjValue;
-            await context.sync();
-            applied++;
-          }
-        } catch(e){}
+          if (shortSide <= 0) continue;
+
+          const adjValue = Math.min(2 * radiusPt / shortSide, 0.5);
+          shape.adjustments.set(0, adjValue);
+          applied++;
+        } catch (e) {
+          continue;
+        }
       }
 
-      if (applied > 0) showStatus(`✓ Radius ${radiusPt}pt applied`);
-      else showStatus("Select Round Rectangle first","err");
+      if (applied === 0) return showStatus("No round rectangle selected","err");
+      await context.sync();
+    });
+  } catch(e) {}
+}
+
+// ── APPLY RADIUS TO ALL SHAPES ────────────────────────
+async function applyCornerRadiusToAll(radiusPt) {
+  radiusPt = parseFloat(radiusPt);
+  if (isNaN(radiusPt) || radiusPt < 0) return;
+
+  try {
+    await PowerPoint.run(async (context) => {
+      const slide = context.presentation.getSelectedSlides().getItemAt(0);
+      const shapes = slide.shapes;
+      shapes.load("items/type,items/width,items/height,items/adjustments");
+      await context.sync();
+
+      if (!shapes.items.length) return showStatus("No shapes on slide","err");
+
+      let applied = 0;
+      for (const shape of shapes.items) {
+        try {
+          if (shape.type !== PowerPoint.ShapeType.geometricShape) continue;
+          const shortSide = Math.min(shape.width, shape.height);
+          if (shortSide <= 0) continue;
+
+          const adjValue = Math.min(2 * radiusPt / shortSide, 0.5);
+          shape.adjustments.set(0, adjValue);
+          applied++;
+        } catch (e) {
+          continue;
+        }
+      }
+
+      if (applied === 0) return showStatus("No round shapes found","err");
+      await context.sync();
+      showStatus(`✓ Applied radius to ${applied} shape(s)`);
     });
   } catch(e) { showStatus("Error: "+e.message,"err"); }
 }
@@ -328,13 +342,35 @@ function saveSVGLib(lib) { localStorage.setItem("svgLibrary", JSON.stringify(lib
 function addSVGToLibrary() {
   const code = document.getElementById('svg-input').value.trim();
   if (!code || !code.includes('<svg')) return showStatus("Paste valid SVG first","err");
+  
+  // Normalize SVG: ensure viewBox is set for proper scaling
+  let normalizedCode = code;
+  const svgMatch = code.match(/<svg[^>]*>/i);
+  if (svgMatch) {
+    let svgTag = svgMatch[0];
+    // Add viewBox if missing
+    if (!svgTag.includes('viewBox')) {
+      const widthMatch = svgTag.match(/width=[\"']([^\"']*)[\"']/);
+      const heightMatch = svgTag.match(/height=[\"']([^\"']*)[\"']/);
+      if (widthMatch && heightMatch) {
+        const w = parseFloat(widthMatch[1]);
+        const h = parseFloat(heightMatch[1]);
+        svgTag = svgTag.replace('>', ` viewBox="0 0 ${w} ${h}">`);
+        normalizedCode = normalizedCode.replace(svgMatch[0], svgTag);
+      }
+    }
+    // Remove width/height to allow dynamic scaling
+    normalizedCode = normalizedCode.replace(/\s*width=[\"'][^\"']*[\"']/i, '');
+    normalizedCode = normalizedCode.replace(/\s*height=[\"'][^\"']*[\"']/i, '');
+  }
+  
   const name = document.getElementById('svgName').value.trim() || `SVG ${getSVGLib().length+1}`;
   const lib  = getSVGLib();
-  lib.push({ id:Date.now(), name, code });
+  lib.push({ id:Date.now(), name, code:normalizedCode });
   saveSVGLib(lib); loadSVGLibraryUI();
   document.getElementById('svg-input').value = '';
   document.getElementById('svgName').value   = '';
-  showStatus(`✓ "${name}" added`);
+  showStatus(`✓ "${name}" added (viewBox preserved)`);
 }
 
 function loadSVGLibraryUI() {
@@ -358,57 +394,160 @@ function loadSVGLibraryUI() {
   }).join('');
 }
 
+async function insertSVGCode(svgCode) {
+  if (!svgCode || !svgCode.includes('<svg')) return showStatus("Paste valid SVG first","err");
+
+  let base64;
+  try {
+    if (!svgCode.includes('viewBox')) {
+      const widthMatch = svgCode.match(/width=["']([^"']*)["']/);
+      const heightMatch = svgCode.match(/height=["']([^"']*)["']/);
+      if (widthMatch && heightMatch) {
+        const w = parseFloat(widthMatch[1]) || 100;
+        const h = parseFloat(heightMatch[1]) || 100;
+        svgCode = svgCode.replace(/<svg/, `<svg viewBox="0 0 ${w} ${h}"`);
+      }
+    }
+
+    if (!svgCode.includes('preserveAspectRatio')) {
+      svgCode = svgCode.replace(/<svg/, `<svg preserveAspectRatio="xMidYMid meet"`);
+    }
+
+    svgCode = svgCode.replace(/width=["'][^"']*["']/i, 'width="200"');
+    svgCode = svgCode.replace(/height=["'][^"']*["']/i, 'height="200"');
+    if (!svgCode.match(/width=/i)) {
+      svgCode = svgCode.replace(/<svg/, '<svg width="200" height="200"');
+    }
+
+    base64 = btoa(unescape(encodeURIComponent(svgCode)));
+
+    await PowerPoint.run(async (context) => {
+      const slide = context.presentation.getSelectedSlides().getItemAt(0);
+      slide.load("width,height");
+      await context.sync();
+
+      const image = slide.shapes.addImage(base64);
+      image.left = Math.max(0, (slide.width - 200) / 2);
+      image.top  = Math.max(0, (slide.height - 200) / 2);
+      image.width  = 200;
+      image.height = 200;
+      await context.sync();
+      showStatus("✓ SVG inserted to slide");
+    });
+  } catch(e) {
+    if (typeof Office !== 'undefined' && Office.context && Office.context.document && base64) {
+      try {
+        Office.context.document.setSelectedDataAsync(
+          base64,
+          { coercionType:Office.CoercionType.Image, imageLeft:100, imageTop:100, imageWidth:200, imageHeight:200 },
+          r => {
+            if (r.status===Office.AsyncResultStatus.Failed) showStatus("Error: "+r.error.message,"err");
+            else showStatus("✓ SVG inserted to slide");
+          }
+        );
+        return;
+      } catch(inner) {}
+    }
+    showStatus("Error inserting SVG: "+e.message,"err");
+  }
+}
+
+async function insertSVGToSlide() {
+  const code = document.getElementById('svg-input').value.trim();
+  if (!code) return showStatus("Paste SVG code first","err");
+  await insertSVGCode(code);
+}
+
 async function insertSVGFromLibrary(id) {
   const item = getSVGLib().find(i=>i.id===id);
   if (!item) return;
-  try {
-    const base64 = btoa(unescape(encodeURIComponent(item.code)));
-    Office.context.document.setSelectedDataAsync(
-      base64,
-      { coercionType:Office.CoercionType.Image, imageLeft:100, imageTop:100, imageWidth:200, imageHeight:200 },
-      r => {
-        if (r.status===Office.AsyncResultStatus.Failed) showStatus("Error: "+r.error.message,"err");
-        else showStatus("✓ Inserted! Right-click → Convert to Shape");
-      }
-    );
-  } catch(e) { showStatus("Error: "+e.message,"err"); }
+  await insertSVGCode(item.code);
 }
 
 function deleteSVGFromLib(id) { saveSVGLib(getSVGLib().filter(i=>i.id!==id)); loadSVGLibraryUI(); }
 
 // ── COLOR PALETTE ─────────────────────────────────────
-let selectedColor=null;
-function getPalette()   { try { return JSON.parse(localStorage.getItem("colorPalette")||"[]"); } catch { return []; } }
-function savePalette(p) { localStorage.setItem("colorPalette", JSON.stringify(p)); }
-
-function addColor() {
-  const hex  = document.getElementById('newColor').value;
-  const name = document.getElementById('newColorName').value||hex;
-  const p    = getPalette(); p.push({id:Date.now(),hex,name}); savePalette(p); loadPaletteUI();
-  document.getElementById('newColorName').value='';
-}
-function deleteColor(id) { savePalette(getPalette().filter(c=>c.id!==id)); loadPaletteUI(); }
-
-function loadPaletteUI() {
-  const p  = getPalette();
-  const mk = (fn,del) => p.map(c=>`
-    <div class="swatch" style="background:${c.hex}" title="${c.name}" onclick="${fn}('${c.hex}','${c.name}')">
-      ${del?`<span class="del" onclick="event.stopPropagation();deleteColor(${c.id})">×</span>`:''}
-    </div>`).join('')||'<span style="font-size:11px;color:#aaa">No colors</span>';
-  document.getElementById('paletteGrid').innerHTML      = mk('selectColor',true);
-  document.getElementById('applyPaletteGrid').innerHTML = mk('selectColor',false);
+function syncFillHexInput() {
+  const input = document.getElementById('fillHex');
+  const colorInput = document.getElementById('fillColor');
+  if (!input || !colorInput) return;
+  let hex = input.value.trim();
+  if (!hex.startsWith('#')) hex = '#'+hex;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    colorInput.value = hex;
+    applyFillColor(hex);
+    addRecentFillColor(hex);
+  }
 }
 
-function selectColor(hex,name) {
-  selectedColor=hex;
-  document.getElementById('selectedColorPreview').innerHTML=
-    `<span style="display:inline-block;width:12px;height:12px;background:${hex};border-radius:2px;margin-right:4px;vertical-align:middle"></span>${name}`;
+function openMoreFillColors() {
+  const colorInput = document.getElementById('fillColor');
+  if (colorInput) colorInput.click();
 }
 
-async function applyColorToSelected(type) {
-  if(!selectedColor) return showStatus("Click a color first","err");
-  if(type==='fill') await applyFillColor(selectedColor);
-  else              await applyBorderColor(selectedColor);
+async function applyNoFill() {
+  try {
+    await PowerPoint.run(async (context) => {
+      const shapes = context.presentation.getSelectedShapes();
+      shapes.load("items/left,items/top,items/width,items/height,items/fill/type");
+      await context.sync();
+      shapes.items.forEach(s => {
+        try {
+          s.fill.setSolidColor("#FFFFFF");
+          if (typeof s.fill.transparency !== 'undefined') {
+            s.fill.transparency = 1;
+          }
+        } catch(e){}
+      });
+      await context.sync();
+      showStatus("✓ No fill applied");
+    });
+  } catch(e) { showStatus("Error: "+e.message,"err"); }
+}
+
+const THEME_COLORS = ["#FFFFFF","#000000","#5B9BD5","#ED7D31","#A5A5A5","#FFC000","#4472C4","#70AD47"];
+const STANDARD_COLORS = ["#C00000","#FF0000","#FFC000","#FFFF00","#92D050","#00B050","#00B0F0","#0070C0","#002060","#7030A0"];
+
+function renderFillColorWindow() {
+  const themeGrid = document.getElementById('themeColorGrid');
+  const standardGrid = document.getElementById('standardColorGrid');
+  const recentGrid = document.getElementById('recentColorGrid');
+
+  if (themeGrid) themeGrid.innerHTML = THEME_COLORS.map(hex => `
+    <div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>
+  `).join('');
+
+  if (standardGrid) standardGrid.innerHTML = STANDARD_COLORS.map(hex => `
+    <div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>
+  `).join('');
+
+  const recent = JSON.parse(localStorage.getItem("recentFillColors")||"[]");
+  if (recentGrid) {
+    if (!recent.length) {
+      recentGrid.innerHTML = `<div class="color-swatch add-border" onclick="openMoreFillColors()">More</div>`;
+    } else {
+      recentGrid.innerHTML = recent.map(hex => `
+        <div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>
+      `).join('');
+    }
+  }
+}
+
+function setFillColor(hex) {
+  const input = document.getElementById('fillColor');
+  const hexInput = document.getElementById('fillHex');
+  if (input) input.value = hex;
+  if (hexInput) hexInput.value = hex;
+  applyFillColor(hex);
+  addRecentFillColor(hex);
+}
+
+function addRecentFillColor(hex) {
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+  const recent = JSON.parse(localStorage.getItem("recentFillColors")||"[]");
+  const updated = [hex, ...recent.filter(c=>c!==hex)].slice(0,8);
+  localStorage.setItem("recentFillColors", JSON.stringify(updated));
+  renderFillColorWindow();
 }
 
 async function bulkColorReplace() {
@@ -433,3 +572,4 @@ async function bulkColorReplace() {
     });
   } catch(e){ showStatus(e.message,"err"); }
 }
+
