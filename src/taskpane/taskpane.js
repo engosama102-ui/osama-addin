@@ -1,6 +1,5 @@
 Office.onReady(() => {
   loadSVGLibraryUI();
-  renderStandardShapes();
 });
 
 function showStatus(msg, type='ok') {
