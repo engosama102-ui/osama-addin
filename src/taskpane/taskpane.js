@@ -493,10 +493,10 @@ async function applyNoFill() {
       await context.sync();
       shapes.items.forEach(s => {
         try {
-          s.fill.setSolidColor("#FFFFFF");
           if (typeof s.fill.transparency !== 'undefined') {
             s.fill.transparency = 1;
           }
+          s.fill.setSolidColor("#FFFFFF");
         } catch(e){}
       });
       await context.sync();
@@ -505,16 +505,86 @@ async function applyNoFill() {
   } catch(e) { showStatus("Error: "+e.message,"err"); }
 }
 
-const THEME_COLORS = ["#FFFFFF","#000000","#5B9BD5","#ED7D31","#A5A5A5","#FFC000","#4472C4","#70AD47"];
+const DEFAULT_THEME_COLORS = ["#FFFFFF","#000000","#4472C4","#ED7D31","#A5A5A5","#FFC000","#5B9BD5","#70AD47"];
 const STANDARD_COLORS = ["#C00000","#FF0000","#FFC000","#FFFF00","#92D050","#00B050","#00B0F0","#0070C0","#002060","#7030A0"];
+
+function getThemeColors() {
+  try {
+    return JSON.parse(localStorage.getItem("themeColors")) || DEFAULT_THEME_COLORS;
+  } catch {
+    return DEFAULT_THEME_COLORS;
+  }
+}
+
+function saveThemeColors(colors) {
+  localStorage.setItem("themeColors", JSON.stringify(colors));
+}
+
+let themeColorEditIndex = null;
+
+function openThemeColorPicker(index) {
+  const picker = document.getElementById('themeColorPicker');
+  const colors = getThemeColors();
+  if (!picker || typeof colors[index] === 'undefined') return;
+  themeColorEditIndex = index;
+  picker.value = colors[index];
+  picker.click();
+}
+
+function saveThemeColorFromPicker(value) {
+  if (themeColorEditIndex === null) return;
+  const colors = getThemeColors();
+  colors[themeColorEditIndex] = value.toUpperCase();
+  saveThemeColors(colors);
+  renderFillColorWindow();
+  themeColorEditIndex = null;
+}
+
+function applyThemeColor(hex) {
+  setFillColor(hex);
+}
+
+function editThemeColor(index) {
+  const colors = getThemeColors();
+  const newHex = prompt("Enter new color (hex):", colors[index]);
+  if (newHex && /^#[0-9A-Fa-f]{6}$/i.test(newHex)) {
+    colors[index] = newHex.toUpperCase();
+    saveThemeColors(colors);
+    renderFillColorWindow();
+  }
+}
+
+function deleteThemeColor(index) {
+  const colors = getThemeColors();
+  colors.splice(index, 1);
+  saveThemeColors(colors);
+  renderFillColorWindow();
+}
+
+function addThemeColor() {
+  const newHex = prompt("Enter new color (hex):", "#000000");
+  if (newHex && /^#[0-9A-Fa-f]{6}$/i.test(newHex)) {
+    const colors = getThemeColors();
+    colors.push(newHex.toUpperCase());
+    saveThemeColors(colors);
+    renderFillColorWindow();
+  }
+}
+
+let longPressTimer;
+let longPressIndex;
 
 function renderFillColorWindow() {
   const themeGrid = document.getElementById('themeColorGrid');
   const standardGrid = document.getElementById('standardColorGrid');
   const recentGrid = document.getElementById('recentColorGrid');
 
-  if (themeGrid) themeGrid.innerHTML = THEME_COLORS.map(hex => `
-    <div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>
+  const themeColors = getThemeColors();
+  if (themeGrid) themeGrid.innerHTML = themeColors.map((hex, i) => `
+    <div class="color-swatch" style="background:${hex}" title="${hex} (click to edit)"
+      onclick="openThemeColorPicker(${i})">
+      <div class="delete-btn" onclick="deleteThemeColor(${i}); event.stopPropagation();">×</div>
+    </div>
   `).join('');
 
   if (standardGrid) standardGrid.innerHTML = STANDARD_COLORS.map(hex => `
@@ -571,5 +641,28 @@ async function bulkColorReplace() {
       showStatus(`✓ Replaced ${count} shape(s)`);
     });
   } catch(e){ showStatus(e.message,"err"); }
+}
+
+if (typeof window !== 'undefined') {
+  Object.assign(window, {
+    onFillColorInput,
+    syncFillHexInput,
+    openMoreFillColors,
+    applyNoFill,
+    applyOpacity,
+    applyBorderColor,
+    applyBorderWidth,
+    applyCornerRadius,
+    applyCornerRadiusToAll,
+    addThemeColor,
+    openThemeColorPicker,
+    saveThemeColorFromPicker,
+    editThemeColor,
+    deleteThemeColor,
+    setFillColor,
+    addSVGToLibrary,
+    insertSVGToSlide,
+    bulkColorReplace
+  });
 }
 
