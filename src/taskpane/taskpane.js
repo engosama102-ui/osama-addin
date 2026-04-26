@@ -188,10 +188,15 @@ function svgToPngBase64(svgCode) {
 async function insertSVGCode(svgCode) {
   try {
     const base64 = await svgToPngBase64(svgCode);
-    await PowerPoint.run(async (context) => {
-      const slide = context.presentation.getSelectedSlides().getItemAt(0);
-      slide.shapes.addImage(base64);
-      await context.sync();
+    await new Promise((resolve, reject) => {
+      Office.context.document.setSelectedDataAsync(
+        base64,
+        { coercionType: Office.CoercionType.Image },
+        function (result) {
+          if (result.status === Office.AsyncResultStatus.Succeeded) resolve();
+          else reject(new Error(result.error.message));
+        }
+      );
     });
     showStatus('SVG inserted!', 'ok');
   } catch (e) {
