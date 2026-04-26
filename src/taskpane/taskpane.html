@@ -1,98 +1,103 @@
-/* OSAMA DESIGN TOOLS - DIRECT CODE */
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge"/>
+    <title>Osama Design Tools</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f4f7; font-size: 13px; color: #333; }
+        .header { background: #1e1e2e; padding: 15px; border-bottom: 2px solid #7c8dfc; text-align: center; }
+        .header-title { font-weight: 800; color: #7c8dfc; letter-spacing: 1px; font-size: 14px; }
+        .content { padding: 12px; }
+        .section { background: #fff; border-radius: 8px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .section-title { font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .row label { font-size: 11px; color: #666; min-width: 80px; }
+        .row input[type=range] { flex: 1; cursor: pointer; }
+        .row span.val { font-size: 11px; min-width: 30px; text-align: right; font-weight: bold; color: #7c8dfc; }
+        .row input[type=color] { width: 35px; height: 30px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; background: none; }
+        .row input[type=text] { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 5px 8px; font-size: 12px; }
+        button { padding: 10px; font-size: 11px; cursor: pointer; border: 1px solid #ddd; border-radius: 6px; background: #fff; width: 100%; transition: 0.2s; font-weight: 600; }
+        button:hover { background: #f8f9ff; border-color: #7c8dfc; }
+        .btn-blue { background: #7c8dfc; color: #fff; border: none; margin-top: 10px; padding: 12px; }
+        .btn-blue:hover { background: #6a7ae0; }
+        .btn-red { background: #ff4d4d; color: #fff; border: none; }
+        .btn-green { background: #2ecc71; color: #fff; border: none; }
+        textarea { width: 100%; height: 70px; font-size: 11px; font-family: monospace; border: 1px solid #ddd; border-radius: 6px; padding: 8px; margin-top: 10px; resize: none; background: #fafafa; }
+        .hint { font-size: 10px; color: #aaa; margin-top: 8px; font-style: italic; }
+        #status { position: fixed; bottom: 10px; left: 10px; right: 10px; font-size: 11px; padding: 10px; border-radius: 6px; display: none; text-align: center; z-index: 1000; }
+        #status.ok { display: block; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        #status.err { display: block; background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
 
-Office.onReady(function (info) {
-    if (info.host === Office.HostType.PowerPoint) {
-        console.log("Office Ready");
-    }
-});
+    <div class="header">
+        <div class="header-title">OSAMA DESIGN TOOLS</div>
+    </div>
 
-// 1. CORNER RADIUS
-async function applyCornerRadius(val) {
-    var radius = parseFloat(val);
-    await PowerPoint.run(async function (context) {
-        var shapes = context.presentation.getSelectedShapes();
-        shapes.load("items/width,items/height,items/adjustments");
-        await context.sync();
+    <div class="content">
 
-        for (var i = 0; i < shapes.items.length; i++) {
-            var shape = shapes.items[i];
-            try {
-                var minSide = Math.min(shape.width, shape.height);
-                // المعادلة الأصلية
-                var adjValue = Math.min(2 * radius / minSide, 0.5);
-                shape.adjustments.set(0, adjValue);
-            } catch (e) { }
-        }
-        await context.sync();
-    });
-}
+        <div class="section">
+            <div class="section-title">Fill Settings</div>
+            <div class="row">
+                <label>Color</label>
+                <input type="color" id="fillColor" value="#4472C4" oninput="onFillColorInput(this.value)">
+                <input type="text" id="fillHex" value="#4472C4" placeholder="#HEX" oninput="syncFillHexInput()">
+            </div>
+            <div class="row">
+                <label>Opacity</label>
+                <input type="range" id="opacitySlider" min="0" max="100" value="100"
+                       oninput="document.getElementById('opacityVal').textContent=this.value; applyOpacity(this.value)">
+                <span class="val" id="opacityVal">100</span>
+            </div>
+            <button class="btn-red" style="margin-top:10px" onclick="applyNoFill()">Remove Fill (Transparent)</button>
+        </div>
 
-// 2. OPACITY
-async function applyOpacity(val) {
-    var trans = 1 - (parseFloat(val) / 100);
-    await PowerPoint.run(async function (context) {
-        var shapes = context.presentation.getSelectedShapes();
-        shapes.load("items/fill");
-        await context.sync();
-        for (var i = 0; i < shapes.items.length; i++) {
-            try { shapes.items[i].fill.transparency = trans; } catch (e) { }
-        }
-        await context.sync();
-    });
-}
+        <div class="section">
+            <div class="section-title">Border Settings</div>
+            <div class="row">
+                <label>Color</label>
+                <input type="color" id="borderColor" value="#000000" oninput="applyBorderColor(this.value)">
+                <input type="text" id="borderHex" value="#000000" placeholder="#HEX" oninput="syncBorderHexInput()">
+            </div>
+            <div class="row">
+                <label>Width (pt)</label>
+                <input type="range" id="borderSlider" min="0" max="20" step="0.5" value="1"
+                       oninput="document.getElementById('borderVal').textContent=this.value; applyBorderWidth(this.value)">
+                <span class="val" id="borderVal">1</span>
+            </div>
+        </div>
 
-// 3. BORDER WIDTH
-async function applyBorderWidth(val) {
-    var pt = parseFloat(val);
-    await PowerPoint.run(async function (context) {
-        var shapes = context.presentation.getSelectedShapes();
-        shapes.load("items/lineFormat");
-        await context.sync();
-        for (var i = 0; i < shapes.items.length; i++) {
-            try {
-                if (pt === 0) shapes.items[i].lineFormat.visible = false;
-                else {
-                    shapes.items[i].lineFormat.visible = true;
-                    shapes.items[i].lineFormat.weight = pt;
-                }
-            } catch (e) { }
-        }
-        await context.sync();
-    });
-}
+        <div class="section">
+            <div class="section-title">Corner Radius</div>
+            <button class="btn-blue" onclick="convertToRoundRect()">1. Convert Selected to Round Rect</button>
+            <div class="row" style="margin-top:15px">
+                <label>Radius (pt)</label>
+                <input type="range" id="radiusSlider" min="0" max="100" value="10"
+                       oninput="document.getElementById('radiusVal').textContent=this.value; applyCornerRadius(this.value)">
+                <span class="val" id="radiusVal">10</span>
+            </div>
+            <div class="row">
+                <button class="btn-green" onclick="applyCornerRadiusToAll(document.getElementById('radiusSlider').value)">Apply to All on Slide</button>
+            </div>
+            <div class="hint">Use "Convert" first if using a normal rectangle.</div>
+        </div>
 
-// 4. FILL COLOR
-async function applyFillColor(hex) {
-    await PowerPoint.run(async function (context) {
-        var shapes = context.presentation.getSelectedShapes();
-        shapes.load("items/fill");
-        await context.sync();
-        for (var i = 0; i < shapes.items.length; i++) {
-            try { shapes.items[i].fill.setSolidColor(hex); } catch (e) { }
-        }
-        await context.sync();
-    });
-}
+        <div class="section">
+            <div class="section-title">SVG Library</div>
+            <textarea id="svg-input" placeholder="Paste your &lt;svg&gt; code here..."></textarea>
+            <div class="row">
+                <button class="btn-blue" onclick="insertSVGToSlide()">Insert SVG to Slide</button>
+            </div>
+        </div>
 
-function onFillColorInput(hex) {
-    document.getElementById('fillHex').value = hex.toUpperCase();
-    applyFillColor(hex);
-}
+    </div>
 
-// 5. CONVERT TO ROUND RECT
-async function convertToRoundRect() {
-    await PowerPoint.run(async function (context) {
-        var shapes = context.presentation.getSelectedShapes();
-        shapes.load("items/left,items/top,items/width,items/height,items/fill/foregroundColor");
-        await context.sync();
-        var slide = context.presentation.getSelectedSlides().getItemAt(0);
-        for (var i = 0; i < shapes.items.length; i++) {
-            var s = shapes.items[i];
-            var L=s.left, T=s.top, W=s.width, H=s.height, F=s.fill.foregroundColor;
-            s.delete();
-            var ns = slide.shapes.addGeometricShape("RoundRectangle", { left:L, top:T, width:W, height:H });
-            ns.fill.setSolidColor(F);
-        }
-        await context.sync();
-    });
-}
+    <div id="status"></div>
+
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+
+</body>
+</html>
