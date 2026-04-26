@@ -1,6 +1,6 @@
 Office.onReady(() => {
   loadSVGLibraryUI();
-  renderFillColorWindow();
+  renderStandardShapes();
 });
 
 function showStatus(msg, type='ok') {
@@ -13,7 +13,30 @@ function onFillColorInput(hex) {
   const field = document.getElementById('fillHex');
   if (field) field.value = hex;
   applyFillColor(hex);
-  addRecentFillColor(hex);
+}
+
+function syncFillHexInput() {
+  const input = document.getElementById('fillHex');
+  const colorInput = document.getElementById('fillColor');
+  if (!input || !colorInput) return;
+  let hex = input.value.trim();
+  if (!hex.startsWith('#')) hex = '#'+hex;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    colorInput.value = hex;
+    applyFillColor(hex);
+  }
+}
+
+function syncBorderHexInput() {
+  const input = document.getElementById('borderHex');
+  const colorInput = document.getElementById('borderColor');
+  if (!input || !colorInput) return;
+  let hex = input.value.trim();
+  if (!hex.startsWith('#')) hex = '#'+hex;
+  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+    colorInput.value = hex;
+    applyBorderColor(hex);
+  }
 }
 
 async function applyFillColor(hex) {
@@ -28,86 +51,20 @@ async function applyFillColor(hex) {
   } catch(e) {}
 }
 
-function updateGradientPreview() {
-  const c1    = document.getElementById('grad1').value;
-  const c2    = document.getElementById('grad2').value;
-  const angle = document.getElementById('gradAngle').value;
-  document.getElementById('gradPreview').style.background =
-    `linear-gradient(${angle}deg, ${c1}, ${c2})`;
-}
-
-async function applyGradient() {
-  const c1    = document.getElementById('grad1').value;
-  const c2    = document.getElementById('grad2').value;
-  const angle = parseFloat(document.getElementById('gradAngle').value);
+async function applyNoFill() {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
       shapes.load("items/fill/type");
       await context.sync();
-      if (!shapes.items.length) return showStatus("Select shapes first","err");
       shapes.items.forEach(s => {
-        try {
-          s.fill.setLinearGradient(angle, [
-            { color: c1.replace('#',''), position: 0 },
-            { color: c2.replace('#',''), position: 1 }
-          ]);
-        } catch(e) {
-          try { s.fill.setSolidColor(c1); } catch(e2){}
-        }
+        try { s.fill.transparency = 1; } catch(e){}
+        try { s.fill.setSolidColor("#FFFFFF"); } catch(e){}
       });
       await context.sync();
-      showStatus("✓ Gradient applied");
+      showStatus("✓ No fill applied");
     });
   } catch(e) { showStatus("Error: "+e.message,"err"); }
-}
-
-function getGradLib()     { try { return JSON.parse(localStorage.getItem("gradLibrary")||"[]"); } catch { return []; } }
-function saveGradLib(lib) { localStorage.setItem("gradLibrary", JSON.stringify(lib)); }
-
-function saveGradient() {
-  const lib  = getGradLib();
-  const name = `Gradient ${lib.length+1}`;
-  lib.push({
-    id:    Date.now(), name,
-    c1:    document.getElementById('grad1').value,
-    c2:    document.getElementById('grad2').value,
-    angle: document.getElementById('gradAngle').value
-  });
-  saveGradLib(lib);
-  loadGradientLibraryUI();
-  showStatus(`✓ "${name}" saved`);
-}
-
-function loadGradientLibraryUI() {
-  const lib = getGradLib();
-  const el  = document.getElementById('gradLibrary');
-  if (!el) return;
-  if (!lib.length) { el.innerHTML=''; return; }
-  el.innerHTML = lib.map(item => `
-    <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
-      <div style="flex:1;height:20px;border-radius:4px;cursor:pointer;
-        background:linear-gradient(${item.angle}deg,${item.c1},${item.c2});
-        border:1px solid #ddd"
-        onclick="loadGradient(${JSON.stringify(item).replace(/"/g,'&quot;')})"
-        title="${item.name}"></div>
-      <span style="font-size:11px;color:#666;min-width:60px">${item.name}</span>
-      <span onclick="deleteGradient(${item.id})" style="color:#ccc;font-size:14px;cursor:pointer">×</span>
-    </div>`).join('');
-}
-
-function loadGradient(item) {
-  document.getElementById('grad1').value = item.c1;
-  document.getElementById('grad2').value = item.c2;
-  document.getElementById('gradAngle').value = item.angle;
-  document.getElementById('gradAngleVal').textContent = item.angle+'°';
-  updateGradientPreview();
-  applyGradient();
-}
-
-function deleteGradient(id) {
-  saveGradLib(getGradLib().filter(i=>i.id!==id));
-  loadGradientLibraryUI();
 }
 
 async function applyOpacity(value) {
@@ -423,133 +380,6 @@ async function insertSVGFromLibrary(id) {
 }
 
 function deleteSVGFromLib(id) { saveSVGLib(getSVGLib().filter(i=>i.id!==id)); loadSVGLibraryUI(); }
-
-// ── COLOR ─────────────────────────────────────────────
-function syncFillHexInput() {
-  const input = document.getElementById('fillHex');
-  const colorInput = document.getElementById('fillColor');
-  if (!input || !colorInput) return;
-  let hex = input.value.trim();
-  if (!hex.startsWith('#')) hex = '#'+hex;
-  if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
-    colorInput.value = hex;
-    applyFillColor(hex);
-    addRecentFillColor(hex);
-  }
-}
-
-function openMoreFillColors() {
-  const colorInput = document.getElementById('fillColor');
-  if (colorInput) colorInput.click();
-}
-
-async function applyNoFill() {
-  try {
-    await PowerPoint.run(async (context) => {
-      const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/fill/type");
-      await context.sync();
-      shapes.items.forEach(s => {
-        try { s.fill.transparency = 1; } catch(e){}
-        try { s.fill.setSolidColor("#FFFFFF"); } catch(e){}
-      });
-      await context.sync();
-      showStatus("✓ No fill applied");
-    });
-  } catch(e) { showStatus("Error: "+e.message,"err"); }
-}
-
-const DEFAULT_THEME_COLORS = ["#FFFFFF","#000000","#4472C4","#ED7D31","#A5A5A5","#FFC000","#5B9BD5","#70AD47"];
-const STANDARD_COLORS = ["#C00000","#FF0000","#FFC000","#FFFF00","#92D050","#00B050","#00B0F0","#0070C0","#002060","#7030A0"];
-
-function getThemeColors() {
-  try { return JSON.parse(localStorage.getItem("themeColors")) || DEFAULT_THEME_COLORS; }
-  catch { return DEFAULT_THEME_COLORS; }
-}
-function saveThemeColors(colors) { localStorage.setItem("themeColors", JSON.stringify(colors)); }
-
-let themeColorEditIndex = null;
-
-function openThemeColorPicker(index) {
-  themeColorEditIndex = index;
-  const picker = document.getElementById('themeColorPicker');
-  const colors = getThemeColors();
-  if (!picker) return;
-  picker.value = colors[index] || "#000000";
-  picker.click();
-}
-
-function saveThemeColorFromPicker(value) {
-  if (themeColorEditIndex === null) return;
-  const colors = getThemeColors();
-  colors[themeColorEditIndex] = value.toUpperCase();
-  saveThemeColors(colors);
-  renderFillColorWindow();
-  themeColorEditIndex = null;
-}
-
-function deleteThemeColor(index) {
-  const colors = getThemeColors();
-  colors.splice(index, 1);
-  saveThemeColors(colors);
-  renderFillColorWindow();
-}
-
-// ── FIX: addThemeColor بدون prompt ────────────────────
-function addThemeColor() {
-  const colors = getThemeColors();
-  colors.push("#4472C4");
-  saveThemeColors(colors);
-  renderFillColorWindow();
-  // فتح الـ picker للون الجديد مباشرة
-  themeColorEditIndex = colors.length - 1;
-  const picker = document.getElementById('themeColorPicker');
-  if (picker) {
-    picker.value = "#4472C4";
-    picker.click();
-  }
-}
-
-function renderFillColorWindow() {
-  const themeGrid    = document.getElementById('themeColorGrid');
-  const standardGrid = document.getElementById('standardColorGrid');
-  const recentGrid   = document.getElementById('recentColorGrid');
-
-  const themeColors = getThemeColors();
-  if (themeGrid) themeGrid.innerHTML = themeColors.map((hex, i) => `
-    <div class="color-swatch" style="background:${hex}" title="Click to apply | Long press to edit"
-      onclick="setFillColor('${hex}')"
-      oncontextmenu="event.preventDefault();openThemeColorPicker(${i})">
-      <div class="delete-btn" onclick="event.stopPropagation();deleteThemeColor(${i})">×</div>
-    </div>`).join('');
-
-  if (standardGrid) standardGrid.innerHTML = STANDARD_COLORS.map(hex => `
-    <div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>`).join('');
-
-  const recent = JSON.parse(localStorage.getItem("recentFillColors")||"[]");
-  if (recentGrid) {
-    recentGrid.innerHTML = recent.length
-      ? recent.map(hex => `<div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>`).join('')
-      : `<div class="color-swatch add-border" onclick="openMoreFillColors()">More</div>`;
-  }
-}
-
-function setFillColor(hex) {
-  const input    = document.getElementById('fillColor');
-  const hexInput = document.getElementById('fillHex');
-  if (input)    input.value    = hex;
-  if (hexInput) hexInput.value = hex;
-  applyFillColor(hex);
-  addRecentFillColor(hex);
-}
-
-function addRecentFillColor(hex) {
-  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
-  const recent  = JSON.parse(localStorage.getItem("recentFillColors")||"[]");
-  const updated = [hex, ...recent.filter(c=>c!==hex)].slice(0,8);
-  localStorage.setItem("recentFillColors", JSON.stringify(updated));
-  renderFillColorWindow();
-}
 
 async function bulkColorReplace() {
   const fh = document.getElementById('findColor').value.replace('#','').toUpperCase();

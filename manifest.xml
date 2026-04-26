@@ -8,7 +8,7 @@
   <Version>1.0.0.0</Version>
   <ProviderName>OpenAI</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Osama Addin"/>
+  <DisplayName DefaultValue="SVG Paste for PowerPoint"/>
   <Description DefaultValue="Paste SVG markup into PowerPoint on Mac, Windows, and web."/>
   <IconUrl DefaultValue="https://engosama102-ui.github.io/osama-addin/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://engosama102-ui.github.io/osama-addin/assets/icon-80.png"/>
