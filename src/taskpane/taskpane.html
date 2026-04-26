@@ -1,7 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <title>Osama Addin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f0f0f0; font-size: 13px; color: #333; }
+    .header { background: #1e1e2e; padding: 12px 16px; }
+    .header-title { font-weight: 800; font-size: 14px; color: #7c8dfc; letter-spacing: 1px; }
+    .content { padding: 8px; }
+    .section { background: #fff; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+    .section-title { font-size: 10px; font-weight: bold; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+    .row label { font-size: 11px; color: #666; min-width: 70px; }
+    .row input[type=range] { flex: 1; }
+    .row span.val { font-size: 11px; min-width: 28px; text-align: right; }
+    .row input[type=color] { width: 32px; height: 26px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; padding: 1px; }
+    .row input[type=text], .row input:not([type]) { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 3px 5px; font-size: 12px; }
+    button { padding: 7px 8px; font-size: 11px; cursor: pointer; border: 1px solid #ddd; border-radius: 6px; background: #f5f5f7; color: #333; }
+    button:hover { background: #e8e8e8; }
+    .btn-blue { background: #7c8dfc; color: #fff; border: none; width: 100%; padding: 8px; border-radius: 6px; font-size: 12px; margin-top: 6px; cursor: pointer; }
+    .btn-red { background: #ff4d4d; color: #fff; border: none; }
+    .btn-green { background: #28a745; color: #fff; border: none; }
+    .btn-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .shape-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 5px; margin-top: 6px; }
+    .shape-item { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f5f5f7; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; padding: 4px; position: relative; }
+    .shape-item:hover { background: #e8edff; border-color: #7c8dfc; }
+    .shape-item svg { width: 26px; height: 26px; }
+    .shape-item span { font-size: 8px; color: #888; margin-top: 2px; text-align: center; }
+    .shape-item .del-s { position: absolute; top: -4px; right: -4px; background: #ff4d4d; color: #fff; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; display: none; align-items: center; justify-content: center; cursor: pointer; }
+    .shape-item:hover .del-s { display: flex; }
+    textarea { width: 100%; height: 60px; font-size: 11px; font-family: monospace; border: 1px solid #ddd; border-radius: 6px; padding: 6px; resize: vertical; }
+    .hint { font-size: 10px; color: #aaa; margin-top: 4px; }
+    #status { font-size: 11px; margin: 4px 8px; padding: 6px 10px; border-radius: 6px; display: none; }
+    #status.ok  { display: block; background: #e6f4ea; color: #2d7a3a; }
+    #status.err { display: block; background: #fdecea; color: #c0392b; }
+  </style>
+</head>
+<body>
+
 <div class="header"><div class="header-title">OSAMA ADDIN</div></div>
 <div class="content">
 
-  <!-- FILL -->
   <div class="section">
     <div class="section-title">Fill</div>
     <div class="row">
@@ -20,7 +60,6 @@
     </div>
   </div>
 
-  <!-- BORDER -->
   <div class="section">
     <div class="section-title">Border</div>
     <div class="row">
@@ -36,7 +75,6 @@
     </div>
   </div>
 
-  <!-- ROUND RECTANGLE -->
   <div class="section">
     <div class="section-title">Round Rectangle</div>
     <div class="row" style="margin-top:6px">
@@ -52,13 +90,11 @@
     <div class="hint">Select Round Rectangle then adjust radius (live)</div>
   </div>
 
-  <!-- SHAPE LIBRARY -->
   <div class="section">
     <div class="section-title">Shape Library</div>
     <div class="shape-grid" id="standardShapeGrid"></div>
   </div>
 
-  <!-- SVG LIBRARY -->
   <div class="section">
     <div class="section-title">SVG Library</div>
     <textarea id="svg-input" placeholder="Paste SVG code here..."></textarea>
@@ -71,7 +107,6 @@
     <div class="hint">Paste SVG and use Add or Insert. Click saved items to insert them.</div>
   </div>
 
-  <!-- BULK REPLACE -->
   <div class="section">
     <div class="section-title">Bulk Replace Color</div>
     <div class="row"><label>Find</label><input type="color" id="findColor" value="#4472C4"></div>
@@ -83,3 +118,5 @@
 <div id="status"></div>
 <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 <script defer src="taskpane.js"></script>
+</body>
+</html>
