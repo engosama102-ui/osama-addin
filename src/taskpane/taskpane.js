@@ -258,26 +258,47 @@ function renderSVGLibrary() {
 }
 
 // --- BULK COLOR REPLACE ---
+function normalizeHex(val) {
+  if (!val) return '';
+  return val.replace('#', '').toUpperCase().trim();
+}
+
+async function readColorFromSelection() {
+  try {
+    await PowerPoint.run(async (context) => {
+      const shapes = context.presentation.getSelectedShapes();
+      shapes.load("items/fill/foregroundColor,items/fill/type");
+      await context.sync();
+      if (!shapes.items.length) { showStatus('Select a shape first', 'err'); return; }
+      const fc = shapes.items[0].fill.foregroundColor;
+      if (!fc) { showStatus('Shape has no solid fill', 'err'); return; }
+      const hex = '#' + normalizeHex(fc);
+      document.getElementById('findColor').value = hex;
+      showStatus('Color read: ' + hex, 'ok');
+    });
+  } catch (e) { showStatus('Could not read color', 'err'); }
+}
+
 async function bulkColorReplace() {
-  const find = document.getElementById('findColor').value.replace('#', '').toUpperCase();
+  const find = normalizeHex(document.getElementById('findColor').value);
   const replace = document.getElementById('replaceColor').value;
   let count = 0;
 
   await PowerPoint.run(async (context) => {
     const slide = context.presentation.getSelectedSlides().getItemAt(0);
     const shapes = slide.shapes;
-    shapes.load("items/fill/foregroundColor,items/fill/type,items/lineFormat/color,items/lineFormat/visible");
+    shapes.load("items/fill/foregroundColor,items/fill/type,items/lineFormat/color");
     await context.sync();
 
     shapes.items.forEach(function(s) {
       try {
-        if (s.fill.foregroundColor && s.fill.foregroundColor.toUpperCase() === find) {
+        if (normalizeHex(s.fill.foregroundColor) === find) {
           s.fill.setSolidColor(replace);
           count++;
         }
       } catch (e) {}
       try {
-        if (s.lineFormat.color && s.lineFormat.color.toUpperCase() === find) {
+        if (normalizeHex(s.lineFormat.color) === find) {
           s.lineFormat.color = replace;
           count++;
         }
@@ -305,4 +326,5 @@ window.insertSVGToSlide = insertSVGToSlide;
 window.saveSVGToLibrary = saveSVGToLibrary;
 window.deleteSVGFromLibrary = deleteSVGFromLibrary;
 window.insertSVGFromLibrary = insertSVGFromLibrary;
+window.readColorFromSelection = readColorFromSelection;
 window.bulkColorReplace = bulkColorReplace;

@@ -111,10 +111,14 @@
             <div class="row">
                 <label>Find</label>
                 <input type="color" id="findColor" value="#4472C4">
-                <label style="min-width:50px;text-align:right">Replace</label>
+                <button style="width:auto;padding:6px 10px;font-size:10px" onclick="readColorFromSelection()">Read from Shape</button>
+            </div>
+            <div class="row">
+                <label>Replace with</label>
                 <input type="color" id="replaceColor" value="#FF0000">
             </div>
             <button class="btn-blue" onclick="bulkColorReplace()">Replace All on Current Slide</button>
+            <div class="hint">Select a shape, click "Read from Shape" to pick its color, then replace.</div>
         </div>
 
     </div>
