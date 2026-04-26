@@ -3,14 +3,12 @@ Office.onReady(() => {
   renderFillColorWindow();
 });
 
-// ── STATUS ────────────────────────────────────────────
 function showStatus(msg, type='ok') {
   const el = document.getElementById('status');
   el.textContent = msg; el.className = type;
   setTimeout(() => el.className='', 3000);
 }
 
-// ── FILL COLOR (live) ─────────────────────────────────
 function onFillColorInput(hex) {
   const field = document.getElementById('fillHex');
   if (field) field.value = hex;
@@ -22,7 +20,7 @@ async function applyFillColor(hex) {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/left,items/top,items/width,items/height,items/fill/type");
+      shapes.load("items/fill/type");
       await context.sync();
       shapes.items.forEach(s => { try { s.fill.setSolidColor(hex); } catch(e){} });
       await context.sync();
@@ -30,7 +28,6 @@ async function applyFillColor(hex) {
   } catch(e) {}
 }
 
-// ── GRADIENT ──────────────────────────────────────────
 function updateGradientPreview() {
   const c1    = document.getElementById('grad1').value;
   const c2    = document.getElementById('grad2').value;
@@ -43,14 +40,12 @@ async function applyGradient() {
   const c1    = document.getElementById('grad1').value;
   const c2    = document.getElementById('grad2').value;
   const angle = parseFloat(document.getElementById('gradAngle').value);
-
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/left,items/top,items/width,items/height,items/fill/type");
+      shapes.load("items/fill/type");
       await context.sync();
       if (!shapes.items.length) return showStatus("Select shapes first","err");
-
       shapes.items.forEach(s => {
         try {
           s.fill.setLinearGradient(angle, [
@@ -58,7 +53,6 @@ async function applyGradient() {
             { color: c2.replace('#',''), position: 1 }
           ]);
         } catch(e) {
-          // fallback: solid color if gradient not supported
           try { s.fill.setSolidColor(c1); } catch(e2){}
         }
       });
@@ -68,14 +62,12 @@ async function applyGradient() {
   } catch(e) { showStatus("Error: "+e.message,"err"); }
 }
 
-// ── GRADIENT LIBRARY ──────────────────────────────────
 function getGradLib()     { try { return JSON.parse(localStorage.getItem("gradLibrary")||"[]"); } catch { return []; } }
 function saveGradLib(lib) { localStorage.setItem("gradLibrary", JSON.stringify(lib)); }
 
 function saveGradient() {
-  const lib   = getGradLib();
-  const name  = prompt("Gradient name:", `Gradient ${lib.length+1}`);
-  if (!name) return;
+  const lib  = getGradLib();
+  const name = `Gradient ${lib.length+1}`;
   lib.push({
     id:    Date.now(), name,
     c1:    document.getElementById('grad1').value,
@@ -90,6 +82,7 @@ function saveGradient() {
 function loadGradientLibraryUI() {
   const lib = getGradLib();
   const el  = document.getElementById('gradLibrary');
+  if (!el) return;
   if (!lib.length) { el.innerHTML=''; return; }
   el.innerHTML = lib.map(item => `
     <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
@@ -117,12 +110,11 @@ function deleteGradient(id) {
   loadGradientLibraryUI();
 }
 
-// ── OPACITY (live) ────────────────────────────────────
 async function applyOpacity(value) {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/left,items/top,items/width,items/height,items/fill/type");
+      shapes.load("items/fill/type");
       await context.sync();
       shapes.items.forEach(s => { try { s.fill.transparency=1-parseFloat(value)/100; } catch(e){} });
       await context.sync();
@@ -130,12 +122,11 @@ async function applyOpacity(value) {
   } catch(e){}
 }
 
-// ── BORDER COLOR (live) ───────────────────────────────
 async function applyBorderColor(hex) {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/left,items/top,items/width,items/height,items/lineFormat/color");
+      shapes.load("items/lineFormat/visible");
       await context.sync();
       shapes.items.forEach(s => { try { s.lineFormat.color=hex; s.lineFormat.visible=true; } catch(e){} });
       await context.sync();
@@ -143,12 +134,11 @@ async function applyBorderColor(hex) {
   } catch(e){}
 }
 
-// ── BORDER WIDTH (live) ───────────────────────────────
 async function applyBorderWidth(value) {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/left,items/top,items/width,items/height,items/lineFormat/weight");
+      shapes.load("items/lineFormat/visible");
       await context.sync();
       const pt=parseFloat(value);
       shapes.items.forEach(s => {
@@ -162,19 +152,15 @@ async function applyBorderWidth(value) {
   } catch(e){}
 }
 
-// ── CONVERT TO ROUND RECT ─────────────────────────────
 async function convertToRoundRect() {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
       shapes.load("items/left,items/top,items/width,items/height,items/fill/foregroundColor,items/lineFormat/color,items/lineFormat/weight,items/lineFormat/visible");
       await context.sync();
-
       if (!shapes.items.length) return showStatus("Select shapes first","err");
-
       const slide = context.presentation.getSelectedSlides().getItemAt(0);
       let count=0;
-
       for (const shape of shapes.items) {
         const L=shape.left, T=shape.top, W=shape.width, H=shape.height;
         let fill="#4472C4", lc="#000000", lw=1, lv=false;
@@ -182,10 +168,8 @@ async function convertToRoundRect() {
         try { lc=shape.lineFormat.color||lc; }          catch(e){}
         try { lw=shape.lineFormat.weight||lw; }         catch(e){}
         try { lv=shape.lineFormat.visible; }            catch(e){}
-
         shape.delete();
         await context.sync();
-
         const ns = slide.shapes.addGeometricShape(
           PowerPoint.GeometricShapeType.roundRectangle,
           { left:L, top:T, width:W, height:H }
@@ -202,77 +186,69 @@ async function convertToRoundRect() {
   } catch(e) { showStatus("Error: "+e.message,"err"); }
 }
 
-// ── CORNER RADIUS ─────────────────────────────────────
 async function applyCornerRadius(radiusPt) {
   radiusPt = parseFloat(radiusPt);
   if (isNaN(radiusPt) || radiusPt < 0) return;
-
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/left,items/top,items/width,items/height,items/type,items/adjustments");
+      shapes.load("items/width,items/height,items/type");
       await context.sync();
-
       if (!shapes.items.length) return;
-
       let applied = 0;
       for (const shape of shapes.items) {
         try {
           if (shape.type !== PowerPoint.ShapeType.geometricShape) continue;
           const shortSide = Math.min(shape.width, shape.height);
           if (shortSide <= 0) continue;
-
           const adjValue = Math.min(2 * radiusPt / shortSide, 0.5);
-          shape.adjustments.set(0, adjValue);
-          applied++;
-        } catch (e) {
-          continue;
-        }
+          shape.adjustments.load("items");
+          await context.sync();
+          if (shape.adjustments.items && shape.adjustments.items.length > 0) {
+            shape.adjustments.items[0].value = adjValue;
+            await context.sync();
+            applied++;
+          }
+        } catch (e) { continue; }
       }
-
-      if (applied === 0) return showStatus("No round rectangle selected","err");
-      await context.sync();
+      if (applied === 0) showStatus("Select Round Rectangle first","err");
+      else showStatus(`✓ Radius applied to ${applied} shape(s)`);
     });
   } catch(e) {}
 }
 
-// ── APPLY RADIUS TO ALL SHAPES ────────────────────────
 async function applyCornerRadiusToAll(radiusPt) {
   radiusPt = parseFloat(radiusPt);
   if (isNaN(radiusPt) || radiusPt < 0) return;
-
   try {
     await PowerPoint.run(async (context) => {
       const slide = context.presentation.getSelectedSlides().getItemAt(0);
       const shapes = slide.shapes;
-      shapes.load("items/type,items/width,items/height,items/adjustments");
+      shapes.load("items/type,items/width,items/height");
       await context.sync();
-
       if (!shapes.items.length) return showStatus("No shapes on slide","err");
-
       let applied = 0;
       for (const shape of shapes.items) {
         try {
           if (shape.type !== PowerPoint.ShapeType.geometricShape) continue;
           const shortSide = Math.min(shape.width, shape.height);
           if (shortSide <= 0) continue;
-
           const adjValue = Math.min(2 * radiusPt / shortSide, 0.5);
-          shape.adjustments.set(0, adjValue);
-          applied++;
-        } catch (e) {
-          continue;
-        }
+          shape.adjustments.load("items");
+          await context.sync();
+          if (shape.adjustments.items && shape.adjustments.items.length > 0) {
+            shape.adjustments.items[0].value = adjValue;
+            await context.sync();
+            applied++;
+          }
+        } catch (e) { continue; }
       }
-
-      if (applied === 0) return showStatus("No round shapes found","err");
-      await context.sync();
-      showStatus(`✓ Applied radius to ${applied} shape(s)`);
+      if (applied === 0) showStatus("No round shapes found","err");
+      else showStatus(`✓ Applied to ${applied} shape(s)`);
     });
   } catch(e) { showStatus("Error: "+e.message,"err"); }
 }
 
-// ── STANDARD SHAPES ───────────────────────────────────
 const STANDARD_SHAPES = [
   { name:"Rect",      type:"rectangle",          svg:'<rect x="2" y="4" width="16" height="12" fill="#555"/>' },
   { name:"RoundRect", type:"roundRectangle",     svg:'<rect x="2" y="4" width="16" height="12" rx="3" fill="#555"/>' },
@@ -318,10 +294,8 @@ async function insertStandardShape(index) {
       const slide = context.presentation.getSelectedSlides().getItemAt(0);
       slide.load("width,height");
       await context.sync();
-
       const shapeType = PowerPoint.GeometricShapeType[s.type];
       if (shapeType === undefined) return showStatus(`${s.name} not supported`,"err");
-
       const shape = slide.shapes.addGeometricShape(shapeType, {
         left:  (slide.width  - 150) / 2,
         top:   (slide.height - 150) / 2,
@@ -335,42 +309,34 @@ async function insertStandardShape(index) {
   } catch(e) { showStatus("Error: "+e.message,"err"); }
 }
 
-// ── SVG LIBRARY ───────────────────────────────────────
 function getSVGLib()     { try { return JSON.parse(localStorage.getItem("svgLibrary")||"[]"); } catch { return []; } }
 function saveSVGLib(lib) { localStorage.setItem("svgLibrary", JSON.stringify(lib)); }
 
 function addSVGToLibrary() {
   const code = document.getElementById('svg-input').value.trim();
   if (!code || !code.includes('<svg')) return showStatus("Paste valid SVG first","err");
-  
-  // Normalize SVG: ensure viewBox is set for proper scaling
   let normalizedCode = code;
   const svgMatch = code.match(/<svg[^>]*>/i);
   if (svgMatch) {
     let svgTag = svgMatch[0];
-    // Add viewBox if missing
     if (!svgTag.includes('viewBox')) {
-      const widthMatch = svgTag.match(/width=[\"']([^\"']*)[\"']/);
-      const heightMatch = svgTag.match(/height=[\"']([^\"']*)[\"']/);
-      if (widthMatch && heightMatch) {
-        const w = parseFloat(widthMatch[1]);
-        const h = parseFloat(heightMatch[1]);
-        svgTag = svgTag.replace('>', ` viewBox="0 0 ${w} ${h}">`);
+      const wm = svgTag.match(/width=[\"']([^\"']*)[\"']/);
+      const hm = svgTag.match(/height=[\"']([^\"']*)[\"']/);
+      if (wm && hm) {
+        svgTag = svgTag.replace('>', ` viewBox="0 0 ${parseFloat(wm[1])} ${parseFloat(hm[1])}">`);
         normalizedCode = normalizedCode.replace(svgMatch[0], svgTag);
       }
     }
-    // Remove width/height to allow dynamic scaling
     normalizedCode = normalizedCode.replace(/\s*width=[\"'][^\"']*[\"']/i, '');
     normalizedCode = normalizedCode.replace(/\s*height=[\"'][^\"']*[\"']/i, '');
   }
-  
   const name = document.getElementById('svgName').value.trim() || `SVG ${getSVGLib().length+1}`;
   const lib  = getSVGLib();
   lib.push({ id:Date.now(), name, code:normalizedCode });
   saveSVGLib(lib); loadSVGLibraryUI();
   document.getElementById('svg-input').value = '';
   document.getElementById('svgName').value   = '';
-  showStatus(`✓ "${name}" added (viewBox preserved)`);
+  showStatus(`✓ "${name}" added`);
 }
 
 function loadSVGLibraryUI() {
@@ -396,59 +362,51 @@ function loadSVGLibraryUI() {
 
 async function insertSVGCode(svgCode) {
   if (!svgCode || !svgCode.includes('<svg')) return showStatus("Paste valid SVG first","err");
-
   let base64;
   try {
     if (!svgCode.includes('viewBox')) {
-      const widthMatch = svgCode.match(/width=["']([^"']*)["']/);
-      const heightMatch = svgCode.match(/height=["']([^"']*)["']/);
-      if (widthMatch && heightMatch) {
-        const w = parseFloat(widthMatch[1]) || 100;
-        const h = parseFloat(heightMatch[1]) || 100;
-        svgCode = svgCode.replace(/<svg/, `<svg viewBox="0 0 ${w} ${h}"`);
+      const wm = svgCode.match(/width=["']([^"']*)["']/);
+      const hm = svgCode.match(/height=["']([^"']*)["']/);
+      if (wm && hm) {
+        svgCode = svgCode.replace(/<svg/, `<svg viewBox="0 0 ${parseFloat(wm[1])||100} ${parseFloat(hm[1])||100}"`);
       }
     }
-
     if (!svgCode.includes('preserveAspectRatio')) {
       svgCode = svgCode.replace(/<svg/, `<svg preserveAspectRatio="xMidYMid meet"`);
     }
-
     svgCode = svgCode.replace(/width=["'][^"']*["']/i, 'width="200"');
     svgCode = svgCode.replace(/height=["'][^"']*["']/i, 'height="200"');
     if (!svgCode.match(/width=/i)) {
       svgCode = svgCode.replace(/<svg/, '<svg width="200" height="200"');
     }
-
     base64 = btoa(unescape(encodeURIComponent(svgCode)));
-
     await PowerPoint.run(async (context) => {
       const slide = context.presentation.getSelectedSlides().getItemAt(0);
       slide.load("width,height");
       await context.sync();
-
       const image = slide.shapes.addImage(base64);
       image.left = Math.max(0, (slide.width - 200) / 2);
       image.top  = Math.max(0, (slide.height - 200) / 2);
       image.width  = 200;
       image.height = 200;
       await context.sync();
-      showStatus("✓ SVG inserted to slide");
+      showStatus("✓ SVG inserted");
     });
   } catch(e) {
-    if (typeof Office !== 'undefined' && Office.context && Office.context.document && base64) {
+    if (base64) {
       try {
         Office.context.document.setSelectedDataAsync(
           base64,
           { coercionType:Office.CoercionType.Image, imageLeft:100, imageTop:100, imageWidth:200, imageHeight:200 },
           r => {
             if (r.status===Office.AsyncResultStatus.Failed) showStatus("Error: "+r.error.message,"err");
-            else showStatus("✓ SVG inserted to slide");
+            else showStatus("✓ SVG inserted");
           }
         );
         return;
       } catch(inner) {}
     }
-    showStatus("Error inserting SVG: "+e.message,"err");
+    showStatus("Error: "+e.message,"err");
   }
 }
 
@@ -466,7 +424,7 @@ async function insertSVGFromLibrary(id) {
 
 function deleteSVGFromLib(id) { saveSVGLib(getSVGLib().filter(i=>i.id!==id)); loadSVGLibraryUI(); }
 
-// ── COLOR PALETTE ─────────────────────────────────────
+// ── COLOR ─────────────────────────────────────────────
 function syncFillHexInput() {
   const input = document.getElementById('fillHex');
   const colorInput = document.getElementById('fillColor');
@@ -489,15 +447,11 @@ async function applyNoFill() {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/left,items/top,items/width,items/height,items/fill/type");
+      shapes.load("items/fill/type");
       await context.sync();
       shapes.items.forEach(s => {
-        try {
-          if (typeof s.fill.transparency !== 'undefined') {
-            s.fill.transparency = 1;
-          }
-          s.fill.setSolidColor("#FFFFFF");
-        } catch(e){}
+        try { s.fill.transparency = 1; } catch(e){}
+        try { s.fill.setSolidColor("#FFFFFF"); } catch(e){}
       });
       await context.sync();
       showStatus("✓ No fill applied");
@@ -509,25 +463,19 @@ const DEFAULT_THEME_COLORS = ["#FFFFFF","#000000","#4472C4","#ED7D31","#A5A5A5",
 const STANDARD_COLORS = ["#C00000","#FF0000","#FFC000","#FFFF00","#92D050","#00B050","#00B0F0","#0070C0","#002060","#7030A0"];
 
 function getThemeColors() {
-  try {
-    return JSON.parse(localStorage.getItem("themeColors")) || DEFAULT_THEME_COLORS;
-  } catch {
-    return DEFAULT_THEME_COLORS;
-  }
+  try { return JSON.parse(localStorage.getItem("themeColors")) || DEFAULT_THEME_COLORS; }
+  catch { return DEFAULT_THEME_COLORS; }
 }
-
-function saveThemeColors(colors) {
-  localStorage.setItem("themeColors", JSON.stringify(colors));
-}
+function saveThemeColors(colors) { localStorage.setItem("themeColors", JSON.stringify(colors)); }
 
 let themeColorEditIndex = null;
 
 function openThemeColorPicker(index) {
+  themeColorEditIndex = index;
   const picker = document.getElementById('themeColorPicker');
   const colors = getThemeColors();
-  if (!picker || typeof colors[index] === 'undefined') return;
-  themeColorEditIndex = index;
-  picker.value = colors[index];
+  if (!picker) return;
+  picker.value = colors[index] || "#000000";
   picker.click();
 }
 
@@ -540,20 +488,6 @@ function saveThemeColorFromPicker(value) {
   themeColorEditIndex = null;
 }
 
-function applyThemeColor(hex) {
-  setFillColor(hex);
-}
-
-function editThemeColor(index) {
-  const colors = getThemeColors();
-  const newHex = prompt("Enter new color (hex):", colors[index]);
-  if (newHex && /^#[0-9A-Fa-f]{6}$/i.test(newHex)) {
-    colors[index] = newHex.toUpperCase();
-    saveThemeColors(colors);
-    renderFillColorWindow();
-  }
-}
-
 function deleteThemeColor(index) {
   const colors = getThemeColors();
   colors.splice(index, 1);
@@ -561,52 +495,49 @@ function deleteThemeColor(index) {
   renderFillColorWindow();
 }
 
+// ── FIX: addThemeColor بدون prompt ────────────────────
 function addThemeColor() {
-  const newHex = prompt("Enter new color (hex):", "#000000");
-  if (newHex && /^#[0-9A-Fa-f]{6}$/i.test(newHex)) {
-    const colors = getThemeColors();
-    colors.push(newHex.toUpperCase());
-    saveThemeColors(colors);
-    renderFillColorWindow();
+  const colors = getThemeColors();
+  colors.push("#4472C4");
+  saveThemeColors(colors);
+  renderFillColorWindow();
+  // فتح الـ picker للون الجديد مباشرة
+  themeColorEditIndex = colors.length - 1;
+  const picker = document.getElementById('themeColorPicker');
+  if (picker) {
+    picker.value = "#4472C4";
+    picker.click();
   }
 }
 
-let longPressTimer;
-let longPressIndex;
-
 function renderFillColorWindow() {
-  const themeGrid = document.getElementById('themeColorGrid');
+  const themeGrid    = document.getElementById('themeColorGrid');
   const standardGrid = document.getElementById('standardColorGrid');
-  const recentGrid = document.getElementById('recentColorGrid');
+  const recentGrid   = document.getElementById('recentColorGrid');
 
   const themeColors = getThemeColors();
   if (themeGrid) themeGrid.innerHTML = themeColors.map((hex, i) => `
-    <div class="color-swatch" style="background:${hex}" title="${hex} (click to edit)"
-      onclick="openThemeColorPicker(${i})">
-      <div class="delete-btn" onclick="deleteThemeColor(${i}); event.stopPropagation();">×</div>
-    </div>
-  `).join('');
+    <div class="color-swatch" style="background:${hex}" title="Click to apply | Long press to edit"
+      onclick="setFillColor('${hex}')"
+      oncontextmenu="event.preventDefault();openThemeColorPicker(${i})">
+      <div class="delete-btn" onclick="event.stopPropagation();deleteThemeColor(${i})">×</div>
+    </div>`).join('');
 
   if (standardGrid) standardGrid.innerHTML = STANDARD_COLORS.map(hex => `
-    <div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>
-  `).join('');
+    <div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>`).join('');
 
   const recent = JSON.parse(localStorage.getItem("recentFillColors")||"[]");
   if (recentGrid) {
-    if (!recent.length) {
-      recentGrid.innerHTML = `<div class="color-swatch add-border" onclick="openMoreFillColors()">More</div>`;
-    } else {
-      recentGrid.innerHTML = recent.map(hex => `
-        <div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>
-      `).join('');
-    }
+    recentGrid.innerHTML = recent.length
+      ? recent.map(hex => `<div class="color-swatch" style="background:${hex}" title="${hex}" onclick="setFillColor('${hex}')"></div>`).join('')
+      : `<div class="color-swatch add-border" onclick="openMoreFillColors()">More</div>`;
   }
 }
 
 function setFillColor(hex) {
-  const input = document.getElementById('fillColor');
+  const input    = document.getElementById('fillColor');
   const hexInput = document.getElementById('fillHex');
-  if (input) input.value = hex;
+  if (input)    input.value    = hex;
   if (hexInput) hexInput.value = hex;
   applyFillColor(hex);
   addRecentFillColor(hex);
@@ -614,7 +545,7 @@ function setFillColor(hex) {
 
 function addRecentFillColor(hex) {
   if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
-  const recent = JSON.parse(localStorage.getItem("recentFillColors")||"[]");
+  const recent  = JSON.parse(localStorage.getItem("recentFillColors")||"[]");
   const updated = [hex, ...recent.filter(c=>c!==hex)].slice(0,8);
   localStorage.setItem("recentFillColors", JSON.stringify(updated));
   renderFillColorWindow();
@@ -642,27 +573,3 @@ async function bulkColorReplace() {
     });
   } catch(e){ showStatus(e.message,"err"); }
 }
-
-if (typeof window !== 'undefined') {
-  Object.assign(window, {
-    onFillColorInput,
-    syncFillHexInput,
-    openMoreFillColors,
-    applyNoFill,
-    applyOpacity,
-    applyBorderColor,
-    applyBorderWidth,
-    applyCornerRadius,
-    applyCornerRadiusToAll,
-    addThemeColor,
-    openThemeColorPicker,
-    saveThemeColorFromPicker,
-    editThemeColor,
-    deleteThemeColor,
-    setFillColor,
-    addSVGToLibrary,
-    insertSVGToSlide,
-    bulkColorReplace
-  });
-}
-
