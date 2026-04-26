@@ -148,59 +148,46 @@ async function applyCornerRadius(radiusPt) {
   try {
     await PowerPoint.run(async (context) => {
       const shapes = context.presentation.getSelectedShapes();
-      shapes.load("items/width,items/height,items/type");
+      shapes.load("items/left,items/top,items/width,items/height,items/fill/foregroundColor,items/lineFormat/color,items/lineFormat/weight,items/lineFormat/visible");
       await context.sync();
       if (!shapes.items.length) return;
-      let applied = 0;
-      for (const shape of shapes.items) {
-        try {
-          if (shape.type !== PowerPoint.ShapeType.geometricShape) continue;
-          const shortSide = Math.min(shape.width, shape.height);
-          if (shortSide <= 0) continue;
-          const adjValue = Math.min(2 * radiusPt / shortSide, 0.5);
-          shape.adjustments.load("items");
-          await context.sync();
-          if (shape.adjustments.items && shape.adjustments.items.length > 0) {
-            shape.adjustments.items[0].value = adjValue;
-            await context.sync();
-            applied++;
-          }
-        } catch (e) { continue; }
-      }
-      if (applied === 0) showStatus("Select Round Rectangle first","err");
-      else showStatus(`✓ Radius applied to ${applied} shape(s)`);
-    });
-  } catch(e) {}
-}
 
-async function applyCornerRadiusToAll(radiusPt) {
-  radiusPt = parseFloat(radiusPt);
-  if (isNaN(radiusPt) || radiusPt < 0) return;
-  try {
-    await PowerPoint.run(async (context) => {
       const slide = context.presentation.getSelectedSlides().getItemAt(0);
-      const shapes = slide.shapes;
-      shapes.load("items/type,items/width,items/height");
-      await context.sync();
-      if (!shapes.items.length) return showStatus("No shapes on slide","err");
       let applied = 0;
+
       for (const shape of shapes.items) {
-        try {
-          if (shape.type !== PowerPoint.ShapeType.geometricShape) continue;
-          const shortSide = Math.min(shape.width, shape.height);
-          if (shortSide <= 0) continue;
-          const adjValue = Math.min(2 * radiusPt / shortSide, 0.5);
-          shape.adjustments.load("items");
+        const L=shape.left, T=shape.top, W=shape.width, H=shape.height;
+        let fill="#4472C4", lc="#000000", lw=1, lv=false;
+        try { fill=shape.fill.foregroundColor||fill; } catch(e){}
+        try { lc=shape.lineFormat.color||lc; }         catch(e){}
+        try { lw=shape.lineFormat.weight||lw; }        catch(e){}
+        try { lv=shape.lineFormat.visible; }           catch(e){}
+
+        const shortSide = Math.min(W, H);
+        const adjValue  = Math.min(radiusPt / shortSide, 0.5);
+
+        shape.delete();
+        await context.sync();
+
+        const ns = slide.shapes.addGeometricShape(
+          PowerPoint.GeometricShapeType.roundRectangle,
+          { left:L, top:T, width:W, height:H }
+        );
+        ns.fill.setSolidColor(fill);
+        ns.lineFormat.color   = lc;
+        ns.lineFormat.weight  = lw;
+        ns.lineFormat.visible = lv;
+        await context.sync();
+
+        ns.adjustments.load("items");
+        await context.sync();
+        if (ns.adjustments.items && ns.adjustments.items.length > 0) {
+          ns.adjustments.items[0].value = adjValue;
           await context.sync();
-          if (shape.adjustments.items && shape.adjustments.items.length > 0) {
-            shape.adjustments.items[0].value = adjValue;
-            await context.sync();
-            applied++;
-          }
-        } catch (e) { continue; }
+        }
+        applied++;
       }
-      if (applied === 0) showStatus("No round shapes found","err");
-      else showStatus(`✓ Applied to ${applied} shape(s)`);
+      if (applied > 0) showStatus(`✓ Radius ${radiusPt}pt applied`);
     });
   } catch(e) { showStatus("Error: "+e.message,"err"); }
 }
