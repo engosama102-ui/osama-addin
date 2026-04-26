@@ -55,7 +55,7 @@
     <div class="row" style="margin-top:8px">
       <label>Opacity %</label>
       <input type="range" id="opacitySlider" min="0" max="100" value="100"
-        oninput='document.getElementById("opacityVal").textContent=this.value,applyOpacity(this.value)'>
+        oninput='document.getElementById("opacityVal").textContent=this.value;applyOpacity(this.value)'>
       <span class="val" id="opacityVal">100</span>
     </div>
   </div>
@@ -70,7 +70,7 @@
     <div class="row">
       <label>Width (pt)</label>
       <input type="range" id="borderSlider" min="0" max="20" value="1"
-        oninput='document.getElementById("borderVal").textContent=this.value,applyBorderWidth(this.value)'>
+        oninput='document.getElementById("borderVal").textContent=this.value;applyBorderWidth(this.value)'>
       <span class="val" id="borderVal">1</span>
     </div>
   </div>
@@ -80,7 +80,7 @@
     <div class="row" style="margin-top:6px">
       <label>Radius (pt)</label>
       <input type="range" id="radiusSlider" min="0" max="50" value="8"
-        oninput='document.getElementById("radiusVal").textContent=this.value'
+        oninput='document.getElementById("radiusVal").textContent=this.value'>
       <span class="val" id="radiusVal">8</span>
     </div>
     <div class="btn-grid-2" style="margin-top:6px">
@@ -88,11 +88,6 @@
       <button class="btn-green" onclick='applyCornerRadiusToAll(document.getElementById("radiusVal").textContent)'>Apply to All</button>
     </div>
     <div class="hint">Select Round Rectangle then adjust radius (live)</div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Shape Library</div>
-    <div class="shape-grid" id="standardShapeGrid"></div>
   </div>
 
   <div class="section">
