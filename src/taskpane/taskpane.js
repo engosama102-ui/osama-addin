@@ -1,9 +1,19 @@
 /* OSAMA DESIGN TOOLS */
 
-Office.onReady(() => {});
+Office.onReady(() => {
+  renderSVGLibrary();
+});
 
 function getShapes(context) {
   return context.presentation.getSelectedShapes();
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = type;
+  setTimeout(() => { el.className = ''; }, 3000);
 }
 
 // --- CORNER RADIUS ---
@@ -145,18 +155,136 @@ async function convertToRoundRect() {
   });
 }
 
-// --- SVG ---
-async function insertSVGToSlide() {
-  const code = document.getElementById('svg-input').value;
-  const base64 = btoa(unescape(encodeURIComponent(code)));
-  await PowerPoint.run(async (context) => {
-    const slide = context.presentation.getSelectedSlides().getItemAt(0);
-    slide.shapes.addImage(base64);
-    await context.sync();
+// --- SVG: convert to PNG via canvas, then insert ---
+function svgToPngBase64(svgCode) {
+  return new Promise((resolve, reject) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgCode, 'image/svg+xml');
+    const svgEl = doc.querySelector('svg');
+    const w = parseInt(svgEl && svgEl.getAttribute('width')) || 200;
+    const h = parseInt(svgEl && svgEl.getAttribute('height')) || 200;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    const blob = new Blob([svgCode], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = function () {
+      ctx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/png').split(',')[1]);
+    };
+    img.onerror = function () {
+      URL.revokeObjectURL(url);
+      reject(new Error('SVG load failed'));
+    };
+    img.src = url;
   });
 }
 
-// Expose all functions globally so HTML event handlers can call them
+async function insertSVGCode(svgCode) {
+  try {
+    const base64 = await svgToPngBase64(svgCode);
+    await PowerPoint.run(async (context) => {
+      const slide = context.presentation.getSelectedSlides().getItemAt(0);
+      slide.shapes.addImage(base64);
+      await context.sync();
+    });
+    showStatus('SVG inserted!', 'ok');
+  } catch (e) {
+    showStatus('Insert failed: ' + e.message, 'err');
+  }
+}
+
+async function insertSVGToSlide() {
+  const code = document.getElementById('svg-input').value.trim();
+  if (!code) { showStatus('Paste SVG code first', 'err'); return; }
+  await insertSVGCode(code);
+}
+
+// --- SVG LIBRARY ---
+function getSVGLibrary() {
+  try { return JSON.parse(localStorage.getItem('svgLibrary') || '[]'); }
+  catch (e) { return []; }
+}
+
+function saveSVGToLibrary() {
+  const code = document.getElementById('svg-input').value.trim();
+  if (!code) { showStatus('Paste SVG code first', 'err'); return; }
+  const nameEl = document.getElementById('svgName');
+  const name = (nameEl && nameEl.value.trim()) || ('Shape ' + Date.now());
+  const lib = getSVGLibrary();
+  lib.push({ id: Date.now(), name: name, code: code });
+  localStorage.setItem('svgLibrary', JSON.stringify(lib));
+  if (nameEl) nameEl.value = '';
+  renderSVGLibrary();
+  showStatus('Saved to library!', 'ok');
+}
+
+function deleteSVGFromLibrary(id) {
+  const lib = getSVGLibrary().filter(function(s) { return s.id !== id; });
+  localStorage.setItem('svgLibrary', JSON.stringify(lib));
+  renderSVGLibrary();
+}
+
+async function insertSVGFromLibrary(id) {
+  const item = getSVGLibrary().find(function(s) { return s.id === id; });
+  if (item) await insertSVGCode(item.code);
+}
+
+function renderSVGLibrary() {
+  const grid = document.getElementById('svgLibraryGrid');
+  if (!grid) return;
+  const lib = getSVGLibrary();
+  if (!lib.length) {
+    grid.innerHTML = '<div style="font-size:10px;color:#aaa;padding:10px;text-align:center;grid-column:1/-1">Library is empty</div>';
+    return;
+  }
+  grid.innerHTML = lib.map(function(s) {
+    return '<div class="shape-item" onclick="insertSVGFromLibrary(' + s.id + ')">' +
+      '<div class="preview">' + s.code + '</div>' +
+      '<span class="lbl">' + s.name + '</span>' +
+      '<button class="del-btn" onclick="event.stopPropagation();deleteSVGFromLibrary(' + s.id + ')">×</button>' +
+      '</div>';
+  }).join('');
+}
+
+// --- BULK COLOR REPLACE ---
+async function bulkColorReplace() {
+  const find = document.getElementById('findColor').value.replace('#', '').toUpperCase();
+  const replace = document.getElementById('replaceColor').value;
+  let count = 0;
+
+  await PowerPoint.run(async (context) => {
+    const slide = context.presentation.getSelectedSlides().getItemAt(0);
+    const shapes = slide.shapes;
+    shapes.load("items/fill/foregroundColor,items/fill/type,items/lineFormat/color,items/lineFormat/visible");
+    await context.sync();
+
+    shapes.items.forEach(function(s) {
+      try {
+        if (s.fill.foregroundColor && s.fill.foregroundColor.toUpperCase() === find) {
+          s.fill.setSolidColor(replace);
+          count++;
+        }
+      } catch (e) {}
+      try {
+        if (s.lineFormat.color && s.lineFormat.color.toUpperCase() === find) {
+          s.lineFormat.color = replace;
+          count++;
+        }
+      } catch (e) {}
+    });
+    await context.sync();
+  });
+
+  showStatus('Replaced ' + count + ' item(s)', count > 0 ? 'ok' : 'err');
+}
+
+// Expose all functions globally for HTML inline event handlers
 window.applyCornerRadius = applyCornerRadius;
 window.applyCornerRadiusToAll = applyCornerRadiusToAll;
 window.applyFillColor = applyFillColor;
@@ -169,3 +297,7 @@ window.syncBorderHexInput = syncBorderHexInput;
 window.applyBorderWidth = applyBorderWidth;
 window.convertToRoundRect = convertToRoundRect;
 window.insertSVGToSlide = insertSVGToSlide;
+window.saveSVGToLibrary = saveSVGToLibrary;
+window.deleteSVGFromLibrary = deleteSVGFromLibrary;
+window.insertSVGFromLibrary = insertSVGFromLibrary;
+window.bulkColorReplace = bulkColorReplace;
