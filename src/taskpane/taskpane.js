@@ -162,39 +162,289 @@ async function convertToRoundRect() {
   });
 }
 
-// --- SVG INSERT ---
-async function insertSVGCode(svgCode) {
-  if (!svgCode || !svgCode.includes('<svg')) {
-    showStatus('Paste valid SVG first', 'err');
-    return;
-  }
-  try {
-    let svg = svgCode;
-    if (!svg.includes('viewBox')) {
-      const wm = svg.match(/width=["']([^"']*)["']/);
-      const hm = svg.match(/height=["']([^"']*)["']/);
-      if (wm && hm) {
-        svg = svg.replace(/<svg/, `<svg viewBox="0 0 ${parseFloat(wm[1])||100} ${parseFloat(hm[1])||100}"`);
-      }
-    }
-    svg = svg.replace(/(<svg[^>]*)\swidth=["'][^"']*["']/i, '$1');
-    svg = svg.replace(/(<svg[^>]*)\sheight=["'][^"']*["']/i, '$1');
-    svg = svg.replace(/<svg/, '<svg width="200" height="200"');
+// --- SVG INSERT (converts SVG to native editable DrawingML shapes via OOXML) ---
+// All _svg* helpers below are required by insertSVGCode — do not remove them.
 
-    const base64 = btoa(unescape(encodeURIComponent(svg)));
+function _svgDims(el) {
+  let w = parseFloat(el.getAttribute('width')), h = parseFloat(el.getAttribute('height'));
+  const vb = el.getAttribute('viewBox');
+  if (vb) { const p = vb.trim().split(/[\s,]+/); w = w||parseFloat(p[2]); h = h||parseFloat(p[3]); }
+  return { w: w||200, h: h||200 };
+}
+
+function _svgColor(c) {
+  if (!c || c==='none'||c==='transparent') return null;
+  c = c.trim();
+  if (c==='currentColor'||c==='currentcolor') return '000000';
+  if (c[0]==='#') { let h=c.slice(1); if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2]; return h.toLowerCase().padStart(6,'0'); }
+  const m=c.match(/rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (m) return [m[1],m[2],m[3]].map(n=>parseInt(n).toString(16).padStart(2,'0')).join('');
+  return {black:'000000',white:'ffffff',red:'ff0000',green:'008000',blue:'0000ff',yellow:'ffff00',
+    orange:'ffa500',purple:'800080',gray:'808080',grey:'808080',pink:'ffc0cb',cyan:'00ffff',
+    lime:'00ff00',navy:'000080',teal:'008080',silver:'c0c0c0',brown:'a52a2a',maroon:'800000'}[c.toLowerCase()]||'000000';
+}
+
+function _svgProp(el, prop, inh) {
+  const sm = new RegExp('(?:^|;)\\s*'+prop+'\\s*:\\s*([^;]+)').exec(el.getAttribute('style')||'');
+  const v = (sm?sm[1].trim():null)||el.getAttribute(prop);
+  return (v && v!=='inherit') ? v : (inh&&inh[prop])||null;
+}
+
+function _svgParsePath(d) {
+  const toks=[]; let i=0;
+  d.replace(/([MmZzLlHhVvCcSsQqTtAa])|([+-]?(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?)/g,
+    (_,c,n)=>{ if(c) toks.push({t:'c',v:c}); else if(n!=null) toks.push({t:'n',v:parseFloat(n)}); });
+  const out=[];
+  const n=()=>(i<toks.length&&toks[i].t==='n')?toks[i++].v:0;
+  const hn=()=>i<toks.length&&toks[i].t==='n';
+  while(i<toks.length){
+    if(toks[i].t!=='c'){i++;continue;}
+    const c=toks[i++].v;
+    if(c==='Z'||c==='z'){out.push({c:'Z'});continue;}
+    do{switch(c){
+      case 'M':case 'm':out.push({c,a:[n(),n()]});break;
+      case 'L':case 'l':out.push({c,a:[n(),n()]});break;
+      case 'H':case 'h':out.push({c,a:[n()]});break;
+      case 'V':case 'v':out.push({c,a:[n()]});break;
+      case 'C':case 'c':out.push({c,a:[n(),n(),n(),n(),n(),n()]});break;
+      case 'S':case 's':out.push({c,a:[n(),n(),n(),n()]});break;
+      case 'Q':case 'q':out.push({c,a:[n(),n(),n(),n()]});break;
+      case 'T':case 't':out.push({c,a:[n(),n()]});break;
+      case 'A':case 'a':out.push({c,a:[n(),n(),n(),n(),n(),n(),n()]});break;
+      default:if(hn())n();
+    }}while(hn());
+  }
+  return out;
+}
+
+function _svgArc2Bez(x1,y1,rx,ry,rot,laf,sf,x2,y2) {
+  if(rx<=0||ry<=0) return [[x1,y1,x2,y2,x2,y2]];
+  const φ=rot*Math.PI/180, cφ=Math.cos(φ), sφ=Math.sin(φ);
+  const dx=(x1-x2)/2, dy=(y1-y2)/2, xp=cφ*dx+sφ*dy, yp=-sφ*dx+cφ*dy;
+  let rxs=rx*rx, rys=ry*ry; const xps=xp*xp, yps=yp*yp;
+  const λ=xps/rxs+yps/rys; if(λ>1){const s=Math.sqrt(λ);rx*=s;ry*=s;rxs=rx*rx;rys=ry*ry;}
+  let sq=Math.sqrt(Math.max(0,(rxs*rys-rxs*yps-rys*xps)/Math.max(rxs*yps+rys*xps,1e-10)));
+  if(laf===sf) sq=-sq;
+  const cxp=sq*rx*yp/ry, cyp=-sq*ry*xp/rx;
+  const cx=cφ*cxp-sφ*cyp+(x1+x2)/2, cy=sφ*cxp+cφ*cyp+(y1+y2)/2;
+  const ang=(ux,uy,vx,vy)=>{let a=Math.acos(Math.max(-1,Math.min(1,(ux*vx+uy*vy)/Math.sqrt((ux*ux+uy*uy)*(vx*vx+vy*vy)))));if(ux*vy-uy*vx<0)a=-a;return a;};
+  let t1=ang(1,0,(xp-cxp)/rx,(yp-cyp)/ry), dt=ang((xp-cxp)/rx,(yp-cyp)/ry,(-xp-cxp)/rx,(-yp-cyp)/ry);
+  if(!sf&&dt>0)dt-=2*Math.PI; if(sf&&dt<0)dt+=2*Math.PI;
+  const ns=Math.ceil(Math.abs(dt)/(Math.PI/2)), dts=dt/ns, out=[];
+  for(let k=0;k<ns;k++){
+    const a1=t1+k*dts, a2=t1+(k+1)*dts;
+    const α=Math.sin(dts)*(Math.sqrt(4+3*Math.pow(Math.tan(dts/2),2))-1)/3;
+    const [c1,s1,c2,s2]=[Math.cos(a1),Math.sin(a1),Math.cos(a2),Math.sin(a2)];
+    const ex=cx+rx*cφ*c2-ry*sφ*s2, ey=cy+rx*sφ*c2+ry*cφ*s2;
+    out.push([cx+rx*cφ*c1-ry*sφ*s1+α*(-(rx*cφ*s1+ry*sφ*c1)),
+              cy+rx*sφ*c1+ry*cφ*s1+α*(-(rx*sφ*s1-ry*cφ*c1)),
+              ex-α*(-(rx*cφ*s2+ry*sφ*c2)), ey-α*(-(rx*sφ*s2-ry*cφ*c2)), ex, ey]);
+  }
+  return out;
+}
+
+function _svgNorm(raw) {
+  const R=v=>Math.round(v*100)/100, out=[];
+  let px=0,py=0,sx=0,sy=0,cpx=null,cpy=null;
+  for(const {c,a=[]} of raw){
+    switch(c){
+      case 'M':px=a[0];py=a[1];sx=px;sy=py;out.push({c:'M',x:R(px),y:R(py)});cpx=cpy=null;break;
+      case 'm':px+=a[0];py+=a[1];sx=px;sy=py;out.push({c:'M',x:R(px),y:R(py)});cpx=cpy=null;break;
+      case 'L':px=a[0];py=a[1];out.push({c:'L',x:R(px),y:R(py)});cpx=cpy=null;break;
+      case 'l':px+=a[0];py+=a[1];out.push({c:'L',x:R(px),y:R(py)});cpx=cpy=null;break;
+      case 'H':px=a[0];out.push({c:'L',x:R(px),y:R(py)});cpx=cpy=null;break;
+      case 'h':px+=a[0];out.push({c:'L',x:R(px),y:R(py)});cpx=cpy=null;break;
+      case 'V':py=a[0];out.push({c:'L',x:R(px),y:R(py)});cpx=cpy=null;break;
+      case 'v':py+=a[0];out.push({c:'L',x:R(px),y:R(py)});cpx=cpy=null;break;
+      case 'C':{const[x1,y1,x2,y2,x,y]=a;out.push({c:'C',x1:R(x1),y1:R(y1),x2:R(x2),y2:R(y2),x:R(x),y:R(y)});cpx=x2;cpy=y2;px=x;py=y;break;}
+      case 'c':{const[a1,b1,a2,b2,dx,dy]=a;const[x1,y1,x2,y2,x,y]=[px+a1,py+b1,px+a2,py+b2,px+dx,py+dy];out.push({c:'C',x1:R(x1),y1:R(y1),x2:R(x2),y2:R(y2),x:R(x),y:R(y)});cpx=x2;cpy=y2;px=x;py=y;break;}
+      case 'S':{const[x2,y2,x,y]=a;const x1=cpx!=null?2*px-cpx:px,y1=cpy!=null?2*py-cpy:py;out.push({c:'C',x1:R(x1),y1:R(y1),x2:R(x2),y2:R(y2),x:R(x),y:R(y)});cpx=x2;cpy=y2;px=x;py=y;break;}
+      case 's':{const[dx2,dy2,dx,dy]=a;const x2=px+dx2,y2=py+dy2,x=px+dx,y=py+dy;const x1=cpx!=null?2*px-cpx:px,y1=cpy!=null?2*py-cpy:py;out.push({c:'C',x1:R(x1),y1:R(y1),x2:R(x2),y2:R(y2),x:R(x),y:R(y)});cpx=x2;cpy=y2;px=x;py=y;break;}
+      case 'Q':{const[qx,qy,x,y]=a;out.push({c:'C',x1:R(px+2/3*(qx-px)),y1:R(py+2/3*(qy-py)),x2:R(x+2/3*(qx-x)),y2:R(y+2/3*(qy-y)),x:R(x),y:R(y)});cpx=qx;cpy=qy;px=x;py=y;break;}
+      case 'q':{const[dqx,dqy,dx,dy]=a;const qx=px+dqx,qy=py+dqy,x=px+dx,y=py+dy;out.push({c:'C',x1:R(px+2/3*(qx-px)),y1:R(py+2/3*(qy-py)),x2:R(x+2/3*(qx-x)),y2:R(y+2/3*(qy-y)),x:R(x),y:R(y)});cpx=qx;cpy=qy;px=x;py=y;break;}
+      case 'T':{const[x,y]=a;const qx=cpx!=null?2*px-cpx:px,qy=cpy!=null?2*py-cpy:py;out.push({c:'C',x1:R(px+2/3*(qx-px)),y1:R(py+2/3*(qy-py)),x2:R(x+2/3*(qx-x)),y2:R(y+2/3*(qy-y)),x:R(x),y:R(y)});cpx=qx;cpy=qy;px=x;py=y;break;}
+      case 't':{const[dx,dy]=a;const x=px+dx,y=py+dy,qx=cpx!=null?2*px-cpx:px,qy=cpy!=null?2*py-cpy:py;out.push({c:'C',x1:R(px+2/3*(qx-px)),y1:R(py+2/3*(qy-py)),x2:R(x+2/3*(qx-x)),y2:R(y+2/3*(qy-y)),x:R(x),y:R(y)});cpx=qx;cpy=qy;px=x;py=y;break;}
+      case 'A':{const[rx,ry,r,laf,sf,x,y]=a;_svgArc2Bez(px,py,rx,ry,r,laf,sf,x,y).forEach(([x1,y1,x2,y2,ex,ey])=>out.push({c:'C',x1:R(x1),y1:R(y1),x2:R(x2),y2:R(y2),x:R(ex),y:R(ey)}));cpx=cpy=null;px=x;py=y;break;}
+      case 'a':{const[rx,ry,r,laf,sf,dx,dy]=a;const x=px+dx,y=py+dy;_svgArc2Bez(px,py,rx,ry,r,laf,sf,x,y).forEach(([x1,y1,x2,y2,ex,ey])=>out.push({c:'C',x1:R(x1),y1:R(y1),x2:R(x2),y2:R(y2),x:R(ex),y:R(ey)}));cpx=cpy=null;px=x;py=y;break;}
+      case 'Z':out.push({c:'Z'});px=sx;py=sy;cpx=cpy=null;break;
+    }
+  }
+  return out;
+}
+
+function _svgCmdsToXML(cmds) {
+  return cmds.map(o=>{
+    const r=v=>Math.round(v);
+    if(o.c==='M') return `<a:moveTo><a:pt x="${r(o.x)}" y="${r(o.y)}"/></a:moveTo>`;
+    if(o.c==='L') return `<a:lnTo><a:pt x="${r(o.x)}" y="${r(o.y)}"/></a:lnTo>`;
+    if(o.c==='C') return `<a:cubicBezTo><a:pt x="${r(o.x1)}" y="${r(o.y1)}"/><a:pt x="${r(o.x2)}" y="${r(o.y2)}"/><a:pt x="${r(o.x)}" y="${r(o.y)}"/></a:cubicBezTo>`;
+    if(o.c==='Z') return `<a:close/>`;
+    return '';
+  }).join('');
+}
+
+function _svgTfParse(t) {
+  if(!t) return {a:1,b:0,c:0,d:1,e:0,f:0};
+  const mx=t.match(/matrix\(\s*([^,\s)]+)[,\s]+([^,\s)]+)[,\s]+([^,\s)]+)[,\s]+([^,\s)]+)[,\s]+([^,\s)]+)[,\s]+([^,\s)]+)\s*\)/);
+  if(mx) return {a:+mx[1],b:+mx[2],c:+mx[3],d:+mx[4],e:+mx[5],f:+mx[6]};
+  let a=1,b=0,cc=0,d=1,e=0,f=0;
+  const tr=t.match(/translate\(\s*([^,)\s]+)(?:[,\s]+([^)\s]+))?\)/);
+  if(tr){e=+tr[1]||0;f=+tr[2]||0;}
+  const sc=t.match(/scale\(\s*([^,)\s]+)(?:[,\s]+([^)\s]+))?\)/);
+  if(sc){a=+sc[1]||1;d=+(sc[2]||sc[1])||1;}
+  const ro=t.match(/rotate\(\s*([^,)\s]+)(?:[,\s]+([^,)\s]+)[,\s]+([^)\s]+))?\)/);
+  if(ro){const θ=(+ro[1])*Math.PI/180,cx2=+ro[2]||0,cy2=+ro[3]||0;a=Math.cos(θ);b=Math.sin(θ);cc=-Math.sin(θ);d=Math.cos(θ);e=cx2-cx2*a+cy2*Math.sin(θ);f=cy2-cx2*Math.sin(θ)-cy2*Math.cos(θ);}
+  return {a,b,c:cc,d,e,f};
+}
+function _svgTfPt(m,x,y){return{x:m.a*x+m.c*y+m.e, y:m.b*x+m.d*y+m.f};}
+function _svgTfMul(p,q){return{a:p.a*q.a+p.c*q.b, b:p.b*q.a+p.d*q.b, c:p.a*q.c+p.c*q.d, d:p.b*q.c+p.d*q.d, e:p.a*q.e+p.c*q.f+p.e, f:p.b*q.e+p.d*q.f+p.f};}
+
+function _svgCollect(el, inh, tf) {
+  const shapes=[];
+  const tag=(el.tagName||'').toLowerCase().replace(/^.*:/,'');
+  const fill=_svgProp(el,'fill',inh), stroke=_svgProp(el,'stroke',inh), sw=_svgProp(el,'stroke-width',inh)||'1';
+  const ci={fill,stroke,'stroke-width':sw};
+  const myTf=_svgTfParse(el.getAttribute&&el.getAttribute('transform'));
+  const m=_svgTfMul(tf,myTf);
+
+  if(tag==='g'||tag==='svg'){for(const ch of (el.children||[]))shapes.push(..._svgCollect(ch,ci,m));return shapes;}
+
+  const fc=_svgColor(fill), sc=_svgColor(stroke), swn=Math.max(1,Math.round(parseFloat(sw)*9525));
+
+  if(tag==='path'){
+    const d=el.getAttribute('d');if(!d)return shapes;
+    const cmds=_svgNorm(_svgParsePath(d)).map(o=>{
+      if(o.c==='M'||o.c==='L'){const p=_svgTfPt(m,o.x,o.y);return{...o,x:p.x,y:p.y};}
+      if(o.c==='C'){const p1=_svgTfPt(m,o.x1,o.y1),p2=_svgTfPt(m,o.x2,o.y2),p=_svgTfPt(m,o.x,o.y);return{...o,x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y,x:p.x,y:p.y};}
+      return o;
+    });
+    if(cmds.length)shapes.push({t:'path',cmds,fill:fc,stroke:sc,sw:swn});
+    return shapes;
+  }
+  if(tag==='rect'){
+    const x=+el.getAttribute('x')||0,y=+el.getAttribute('y')||0,w=+el.getAttribute('width')||0,h=+el.getAttribute('height')||0,rx=+el.getAttribute('rx')||0;
+    const p1=_svgTfPt(m,x,y),p2=_svgTfPt(m,x+w,y+h);
+    shapes.push({t:'rect',x:p1.x,y:p1.y,w:p2.x-p1.x,h:p2.y-p1.y,rx,fill:fc,stroke:sc,sw:swn});
+    return shapes;
+  }
+  if(tag==='circle'){
+    const cx=+el.getAttribute('cx')||0,cy=+el.getAttribute('cy')||0,r=+el.getAttribute('r')||0;
+    const p=_svgTfPt(m,cx-r,cy-r);shapes.push({t:'ellipse',x:p.x,y:p.y,w:r*2,h:r*2,fill:fc,stroke:sc,sw:swn});return shapes;
+  }
+  if(tag==='ellipse'){
+    const cx=+el.getAttribute('cx')||0,cy=+el.getAttribute('cy')||0,rx2=+el.getAttribute('rx')||0,ry2=+el.getAttribute('ry')||0;
+    const p=_svgTfPt(m,cx-rx2,cy-ry2);shapes.push({t:'ellipse',x:p.x,y:p.y,w:rx2*2,h:ry2*2,fill:fc,stroke:sc,sw:swn});return shapes;
+  }
+  if(tag==='polygon'||tag==='polyline'){
+    const pts=(el.getAttribute('points')||'').trim().split(/[\s,]+/).map(Number).filter(n=>!isNaN(n));
+    if(pts.length<2)return shapes;
+    const cmds=[];
+    for(let k=0;k<pts.length-1;k+=2){const p=_svgTfPt(m,pts[k],pts[k+1]);cmds.push({c:k===0?'M':'L',x:p.x,y:p.y});}
+    if(tag==='polygon')cmds.push({c:'Z'});
+    shapes.push({t:'path',cmds,fill:fc,stroke:sc,sw:swn});return shapes;
+  }
+  if(tag==='line'){
+    const p1=_svgTfPt(m,+el.getAttribute('x1')||0,+el.getAttribute('y1')||0);
+    const p2=_svgTfPt(m,+el.getAttribute('x2')||0,+el.getAttribute('y2')||0);
+    shapes.push({t:'path',cmds:[{c:'M',x:p1.x,y:p1.y},{c:'L',x:p2.x,y:p2.y}],fill:null,stroke:sc||'000000',sw:swn});return shapes;
+  }
+  return shapes;
+}
+
+function _svgToSpXML(shapes,vbW,vbH,cx,cy) {
+  let xml='',id=10;
+  const eu=v=>Math.round(v/vbW*cx), ev=v=>Math.round(v/vbH*cy);
+  for(const s of shapes){
+    const fxml=s.fill?`<a:solidFill><a:srgbClr val="${s.fill}"/></a:solidFill>`:`<a:noFill/>`;
+    const lxml=s.stroke?`<a:ln w="${s.sw}"><a:solidFill><a:srgbClr val="${s.stroke}"/></a:solidFill></a:ln>`:`<a:ln><a:noFill/></a:ln>`;
+    if(s.t==='path'){
+      const pxml=_svgCmdsToXML(s.cmds);if(!pxml)continue;
+      xml+=`<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="S${id++}"/><p:cNvSpPr><a:spLocks noTextEdit="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>
+        <a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="l" t="t" r="r" b="b"/>
+        <a:pathLst><a:path w="${Math.round(vbW)}" h="${Math.round(vbH)}">${pxml}</a:path></a:pathLst></a:custGeom>
+        ${fxml}${lxml}</p:spPr></p:sp>`;
+    } else if(s.t==='rect'){
+      const hasR=s.rx>0,adj=hasR?Math.round(Math.min(s.rx/Math.max(s.w,s.h,1),0.5)*50000):0;
+      const geom=hasR?`<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val ${adj}"/></a:avLst></a:prstGeom>`:`<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`;
+      xml+=`<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="R${id++}"/><p:cNvSpPr><a:spLocks noTextEdit="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="${eu(s.x)}" y="${ev(s.y)}"/><a:ext cx="${eu(s.w)}" cy="${ev(s.h)}"/></a:xfrm>
+        ${geom}${fxml}${lxml}</p:spPr></p:sp>`;
+    } else if(s.t==='ellipse'){
+      xml+=`<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="E${id++}"/><p:cNvSpPr><a:spLocks noTextEdit="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="${eu(s.x)}" y="${ev(s.y)}"/><a:ext cx="${eu(s.w)}" cy="${ev(s.h)}"/></a:xfrm>
+        <a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom>${fxml}${lxml}</p:spPr></p:sp>`;
+    }
+  }
+  return xml;
+}
+
+function _buildOoxml(spTree) {
+  return `<pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">
+<pkg:part pkg:name="/_rels/.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml"><pkg:xmlData>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships></pkg:xmlData></pkg:part>
+<pkg:part pkg:name="/ppt/presentation.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"><pkg:xmlData>
+<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<p:sldMasterIdLst/><p:sldIdLst><p:sldId id="256" r:id="rId1"/></p:sldIdLst>
+<p:sldSz cx="9144000" cy="6858000"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation></pkg:xmlData></pkg:part>
+<pkg:part pkg:name="/ppt/_rels/presentation.xml.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml"><pkg:xmlData>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/></Relationships></pkg:xmlData></pkg:part>
+<pkg:part pkg:name="/ppt/slides/slide1.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"><pkg:xmlData>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<p:cSld><p:spTree>
+<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+${spTree}
+</p:spTree></p:cSld></p:sld></pkg:xmlData></pkg:part>
+<pkg:part pkg:name="/ppt/slides/_rels/slide1.xml.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml"><pkg:xmlData>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/></pkg:xmlData></pkg:part>
+</pkg:package>`;
+}
+
+async function insertSVGCode(svgCode) {
+  if (!svgCode || !svgCode.includes('<svg')) { showStatus('Paste valid SVG first', 'err'); return; }
+  try {
+    const dp = new DOMParser();
+    const svgEl = dp.parseFromString(svgCode, 'image/svg+xml').querySelector('svg');
+    if (!svgEl) throw new Error('Invalid SVG');
+
+    const { w, h } = _svgDims(svgEl);
+    const vb = svgEl.getAttribute('viewBox');
+    let vbX=0, vbY=0, vbW=w, vbH=h;
+    if (vb) { const p=vb.trim().split(/[\s,]+/); vbX=+p[0]||0; vbY=+p[1]||0; vbW=+p[2]||w; vbH=+p[3]||h; }
+
+    const cx = Math.round(w * 9525); // px → EMU at 96dpi
+    const cy = Math.round(h * 9525);
+    const gx = 914400, gy = 457200;  // 1in from left, 0.5in from top
+
+    // identity matrix with viewBox offset applied
+    const rootTf = { a:1, b:0, c:0, d:1, e:-vbX, f:-vbY };
+    const shapes = _svgCollect(svgEl, { fill:'black', stroke:'none', 'stroke-width':'1' }, rootTf);
+    if (!shapes.length) throw new Error('No drawable shapes found in SVG');
+
+    const spXML = _svgToSpXML(shapes, vbW, vbH, cx, cy);
+
+    // Wrap all shapes in a group so they behave as one unit and can be ungrouped
+    const groupXML = `<p:grpSp>
+<p:nvGrpSpPr><p:cNvPr id="2" name="SVG"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+<p:grpSpPr><a:xfrm>
+  <a:off x="${gx}" y="${gy}"/><a:ext cx="${cx}" cy="${cy}"/>
+  <a:chOff x="0" y="0"/><a:chExt cx="${cx}" cy="${cy}"/>
+</a:xfrm></p:grpSpPr>
+${spXML}
+</p:grpSp>`;
 
     await new Promise((resolve, reject) => {
       Office.context.document.setSelectedDataAsync(
-        base64,
-        { coercionType: Office.CoercionType.Image, imageLeft:100, imageTop:100, imageWidth:200, imageHeight:200 },
-        r => {
-          if (r.status === Office.AsyncResultStatus.Succeeded) resolve();
-          else reject(new Error(r.error.message));
-        }
+        _buildOoxml(groupXML),
+        { coercionType: Office.CoercionType.Ooxml },
+        r => { if (r.status === Office.AsyncResultStatus.Succeeded) resolve(); else reject(new Error(r.error.message)); }
       );
     });
-    showStatus('✓ SVG inserted! Right-click → Convert to Shape', 'ok');
-  } catch(e) {
+    showStatus('✓ Inserted ' + shapes.length + ' shapes. Ungroup (Ctrl+Shift+G) to edit colors.', 'ok');
+  } catch (e) {
     showStatus('Error: ' + e.message, 'err');
   }
 }
