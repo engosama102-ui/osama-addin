@@ -406,44 +406,21 @@ ${spTree}
 async function insertSVGCode(svgCode) {
   if (!svgCode || !svgCode.includes('<svg')) { showStatus('Paste valid SVG first', 'err'); return; }
   try {
-    const dp = new DOMParser();
-    const svgEl = dp.parseFromString(svgCode, 'image/svg+xml').querySelector('svg');
-    if (!svgEl) throw new Error('Invalid SVG');
-
-    const { w, h } = _svgDims(svgEl);
-    const vb = svgEl.getAttribute('viewBox');
-    let vbX=0, vbY=0, vbW=w, vbH=h;
-    if (vb) { const p=vb.trim().split(/[\s,]+/); vbX=+p[0]||0; vbY=+p[1]||0; vbW=+p[2]||w; vbH=+p[3]||h; }
-
-    const cx = Math.round(w * 9525); // px → EMU at 96dpi
-    const cy = Math.round(h * 9525);
-    const gx = 914400, gy = 457200;  // 1in from left, 0.5in from top
-
-    // identity matrix with viewBox offset applied
-    const rootTf = { a:1, b:0, c:0, d:1, e:-vbX, f:-vbY };
-    const shapes = _svgCollect(svgEl, { fill:'black', stroke:'none', 'stroke-width':'1' }, rootTf);
-    if (!shapes.length) throw new Error('No drawable shapes found in SVG');
-
-    const spXML = _svgToSpXML(shapes, vbW, vbH, cx, cy);
-
-    // Wrap all shapes in a group so they behave as one unit and can be ungrouped
-    const groupXML = `<p:grpSp>
-<p:nvGrpSpPr><p:cNvPr id="2" name="SVG"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-<p:grpSpPr><a:xfrm>
-  <a:off x="${gx}" y="${gy}"/><a:ext cx="${cx}" cy="${cy}"/>
-  <a:chOff x="0" y="0"/><a:chExt cx="${cx}" cy="${cy}"/>
-</a:xfrm></p:grpSpPr>
-${spXML}
-</p:grpSp>`;
-
+    let svg = svgCode.trim();
+    if (!svg.match(/\swidth\s*=/i)) {
+      const vbM = svg.match(/viewBox=["']\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)/);
+      const w = vbM ? vbM[1] : '200';
+      const h = vbM ? vbM[2] : '200';
+      svg = svg.replace(/<svg/, `<svg width="${w}" height="${h}"`);
+    }
     await new Promise((resolve, reject) => {
       Office.context.document.setSelectedDataAsync(
-        _buildOoxml(groupXML),
-        { coercionType: Office.CoercionType.Ooxml },
+        svg,
+        { coercionType: Office.CoercionType.XmlSvg },
         r => { if (r.status === Office.AsyncResultStatus.Succeeded) resolve(); else reject(new Error(r.error.message)); }
       );
     });
-    showStatus('✓ Inserted ' + shapes.length + ' shapes. Ungroup (Ctrl+Shift+G) to edit colors.', 'ok');
+    showStatus('✓ SVG inserted!', 'ok');
   } catch (e) {
     showStatus('Error: ' + e.message, 'err');
   }
