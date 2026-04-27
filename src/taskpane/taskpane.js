@@ -486,38 +486,59 @@ function buildShapesOoxml(spTreeContent) {
 }
 
 async function insertSVGCode(svgCode) {
-  if (!svgCode || !svgCode.includes('<svg')) {
-    showStatus('Paste valid SVG first', 'err');
-    return;
-  }
   try {
-    let svg = svgCode;
-    if (!svg.includes('viewBox')) {
-      const wm = svg.match(/width=["']([^"']*)["']/);
-      const hm = svg.match(/height=["']([^"']*)["']/);
-      if (wm && hm) {
-        svg = svg.replace(/<svg/, `<svg viewBox="0 0 ${parseFloat(wm[1])||100} ${parseFloat(hm[1])||100}"`);
-      }
+    const domParser = new DOMParser();
+    const svgDoc = domParser.parseFromString(svgCode, 'image/svg+xml');
+    const svgEl = svgDoc.querySelector('svg');
+    if (!svgEl) throw new Error('Invalid SVG');
+
+    const { w, h } = svgGetDimensions(svgEl);
+    const vb = svgEl.getAttribute('viewBox');
+    let vbX = 0, vbY = 0, vbW = w, vbH = h;
+    if (vb) {
+      const p = vb.trim().split(/[\s,]+/);
+      vbX = parseFloat(p[0]) || 0; vbY = parseFloat(p[1]) || 0;
+      vbW = parseFloat(p[2]) || w; vbH = parseFloat(p[3]) || h;
     }
-    svg = svg.replace(/width=["'][^"']*["']/i, 'width="200"');
-    svg = svg.replace(/height=["'][^"']*["']/i, 'height="200"');
-    if (!svg.match(/width=/i)) {
-      svg = svg.replace(/<svg/, '<svg width="200" height="200"');
-    }
-    const base64 = btoa(unescape(encodeURIComponent(svg)));
+
+    // 1px at 96dpi = 9525 EMU
+    const cx = Math.round(w * 9525);
+    const cy = Math.round(h * 9525);
+    const gx = 457200, gy = 457200; // 0.5 inch from top-left
+
+    const shapes = svgCollectShapes(
+      svgEl,
+      { fill: 'black', stroke: 'none', 'stroke-width': '1' },
+      { tx: -vbX, ty: -vbY, sx: 1, sy: 1 }
+    );
+    if (!shapes.length) throw new Error('No drawable shapes found in SVG');
+
+    const spXML = svgShapesToSpXML(shapes, vbW, vbH, cx, cy, gx, gy);
+    const groupXML = `<p:grpSp>
+      <p:nvGrpSpPr><p:cNvPr id="2" name="SVG Group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+      <p:grpSpPr>
+        <a:xfrm>
+          <a:off x="${gx}" y="${gy}"/><a:ext cx="${cx}" cy="${cy}"/>
+          <a:chOff x="${gx}" y="${gy}"/><a:chExt cx="${cx}" cy="${cy}"/>
+        </a:xfrm>
+      </p:grpSpPr>
+      ${spXML}
+    </p:grpSp>`;
+
+    const ooxml = buildShapesOoxml(groupXML);
     await new Promise((resolve, reject) => {
       Office.context.document.setSelectedDataAsync(
-        base64,
-        { coercionType: Office.CoercionType.Image, imageLeft:100, imageTop:100, imageWidth:200, imageHeight:200 },
-        r => {
-          if (r.status === Office.AsyncResultStatus.Succeeded) resolve();
-          else reject(new Error(r.error.message));
+        ooxml,
+        { coercionType: Office.CoercionType.Ooxml },
+        function (result) {
+          if (result.status === Office.AsyncResultStatus.Succeeded) resolve();
+          else reject(new Error(result.error.message));
         }
       );
     });
-    showStatus('✓ SVG inserted. Right-click → Convert to Shape', 'ok');
-  } catch(e) {
-    showStatus('Error: ' + e.message, 'err');
+    showStatus('SVG inserted as ' + shapes.length + ' editable shapes. Ungroup to edit colors.', 'ok');
+  } catch (e) {
+    showStatus('Insert failed: ' + e.message, 'err');
   }
 }
 
