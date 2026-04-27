@@ -6,10 +6,10 @@
            xsi:type="TaskPaneApp">
   <Id>8d1c9de0-6d69-4f75-bf90-0d6718b10f01</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>OpenAI</ProviderName>
+  <ProviderName>Osama</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="SVG Paste for PowerPoint"/>
-  <Description DefaultValue="Paste SVG markup into PowerPoint on Mac, Windows, and web."/>
+  <DisplayName DefaultValue="Osama Addin"/>
+  <Description DefaultValue="Open Osama Addin markup into PowerPoint on Mac, Windows, and web."/>
   <IconUrl DefaultValue="https://engosama102-ui.github.io/osama-addin/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://engosama102-ui.github.io/osama-addin/assets/icon-80.png"/>
   <SupportUrl DefaultValue="https://engosama102-ui.github.io/osama-addin"/>
@@ -34,7 +34,7 @@
           </GetStarted>
           <FunctionFile resid="Functions.Url"/>
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
-            <OfficeTab id="TabInsert">
+            <OfficeTab id="TabHome">
               <Group id="SvgPaste.Group">
                 <Label resid="SvgPaste.GroupLabel"/>
                 <Icon>
@@ -79,7 +79,7 @@
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Get started with SVG Paste"/>
         <bt:String id="SvgPaste.GroupLabel" DefaultValue="SVG Tools"/>
-        <bt:String id="SvgPaste.ButtonLabel" DefaultValue="Paste SVG"/>
+        <bt:String id="SvgPaste.ButtonLabel" DefaultValue="Open Osama Addin"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Open the task pane and paste raw SVG markup into the current slide."/>
