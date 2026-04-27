@@ -296,7 +296,9 @@ function _svgTfParse(t) {
   if(ro){const θ=(+ro[1])*Math.PI/180,cx2=+ro[2]||0,cy2=+ro[3]||0;a=Math.cos(θ);b=Math.sin(θ);cc=-Math.sin(θ);d=Math.cos(θ);e=cx2-cx2*a+cy2*Math.sin(θ);f=cy2-cx2*Math.sin(θ)-cy2*Math.cos(θ);}
   return {a,b,c:cc,d,e,f};
 }
+
 function _svgTfPt(m,x,y){return{x:m.a*x+m.c*y+m.e, y:m.b*x+m.d*y+m.f};}
+
 function _svgTfMul(p,q){return{a:p.a*q.a+p.c*q.b, b:p.b*q.a+p.d*q.b, c:p.a*q.c+p.c*q.d, d:p.b*q.c+p.d*q.d, e:p.a*q.e+p.c*q.f+p.e, f:p.b*q.e+p.d*q.f+p.f};}
 
 function _svgCollect(el, inh, tf) {
@@ -405,8 +407,8 @@ ${spTree}
 
 // --- MAIN INSERT FUNCTION ---
 // Strategy:
-//   1. Try PowerPoint.run API to insert native shapes (works on Mac & Windows)
-//   2. If that fails, try Office.CoercionType.XmlSvg as fallback (image, not editable)
+//   1. Try PowerPoint.run API to insert native shapes (works on Windows)
+//   2. If that fails, try Office.CoercionType.XmlSvg as fallback (image, works on Mac)
 async function insertSVGCode(svgCode) {
   if (!svgCode || !svgCode.includes('<svg')) {
     showStatus('Paste valid SVG first', 'err');
@@ -441,30 +443,32 @@ async function insertSVGCode(svgCode) {
         const spTree = _svgToSpXML(shapes, vbW, vbH, cxEmu, cyEmu);
         const ooxml = _buildOoxml(spTree);
 
-        await PowerPoint.run(async (context) => {
-          const slide = context.presentation.getSelectedSlides().getItemAt(0);
-          slide.insertSlidesFromBase64; // just a check — real insert below
-        });
+        // Try to insert via OOXML coercion
+        try {
+          await new Promise((resolve, reject) => {
+            Office.context.document.setSelectedDataAsync(
+              ooxml,
+              { coercionType: Office.CoercionType.Ooxml },
+              (result) => {
+                if (result.status === Office.AsyncResultStatus.Succeeded) {
+                  resolve();
+                } else {
+                  reject(new Error(result.error ? result.error.message : 'OOXML failed'));
+                }
+              }
+            );
+          });
 
-        // Use setSelectedDataAsync with Ooxml on Windows, fallback handled below
-        await new Promise((resolve, reject) => {
-          Office.context.document.setSelectedDataAsync(
-            ooxml,
-            { coercionType: Office.CoercionType.Ooxml },
-            r => {
-              if (r.status === Office.AsyncResultStatus.Succeeded) resolve();
-              else reject(new Error(r.error ? r.error.message : 'OOXML failed'));
-            }
-          );
-        });
-
-        showStatus('✓ SVG inserted as native shapes!', 'ok');
-        return;
+          showStatus('✓ SVG inserted as native shapes!', 'ok');
+          return;
+        } catch (ooError) {
+          console.warn('OOXML insert failed, trying XmlSvg fallback:', ooError.message);
+          // Fall through to XmlSvg method
+        }
       }
     }
-  } catch (e) {
-    // OOXML failed (likely Mac) — fall through to XmlSvg
-    console.warn('OOXML insert failed, trying XmlSvg fallback:', e.message);
+  } catch (parseError) {
+    console.warn('SVG parsing failed:', parseError.message);
   }
 
   // --- Method 2: XmlSvg fallback (Mac-compatible, inserts as image) ---
@@ -473,15 +477,18 @@ async function insertSVGCode(svgCode) {
       Office.context.document.setSelectedDataAsync(
         svg,
         { coercionType: Office.CoercionType.XmlSvg },
-        r => {
-          if (r.status === Office.AsyncResultStatus.Succeeded) resolve();
-          else reject(new Error(r.error ? r.error.message : 'XmlSvg failed'));
+        (result) => {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            resolve();
+          } else {
+            reject(new Error(result.error ? result.error.message : 'XmlSvg failed'));
+          }
         }
       );
     });
-    showStatus('✓ SVG inserted!', 'ok');
-  } catch (e) {
-    showStatus('Error: ' + e.message, 'err');
+    showStatus('✓ SVG inserted as image!', 'ok');
+  } catch (fallbackError) {
+    showStatus('Error inserting SVG: ' + fallbackError.message, 'err');
   }
 }
 
