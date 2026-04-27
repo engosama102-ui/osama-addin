@@ -64,8 +64,16 @@
     .download-card { background: linear-gradient(135deg, rgba(91,110,245,0.15), rgba(167,139,250,0.1)); border: 1px solid rgba(91,110,245,0.25); border-radius: 24px; padding: 48px 40px; text-align: center; }
     .download-card h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 12px; }
     .download-card p { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
+    .contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; text-align: center; margin-bottom: 40px; }
+    .contact-card h3 { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .contact-card p { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+    .contact-links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .contact-link { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 14px; transition: transform 0.2s; }
+    .contact-link:hover { transform: translateY(-2px); }
+    .contact-link.email { background: rgba(91,110,245,0.15); border: 1px solid rgba(91,110,245,0.3); color: #818cf8; }
+    .contact-link.whatsapp { background: rgba(37,211,102,0.15); border: 1px solid rgba(37,211,102,0.3); color: #25d366; }
     footer { position: relative; z-index: 1; text-align: center; padding: 32px 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
-    @media (max-width: 600px) { nav { padding: 14px 20px; } .nav-links { display: none; } .update-card { flex-direction: column; } }
+    @media (max-width: 600px) { nav { padding: 14px 20px; } .nav-links { display: none; } .update-card { flex-direction: column; } .contact-links { flex-direction: column; align-items: center; } }
   </style>
 </head>
 <body>
@@ -74,30 +82,57 @@
   <div class="nav-links">
     <a href="#features">Features</a>
     <a href="#install">Install</a>
-    <a href="#updates">Updates</a>
+    <a href="#contact">Contact</a>
   </div>
 </nav>
+
 <section class="hero">
   <div class="hero-tag">Free PowerPoint Tool</div>
   <h1>Design like<br><span>Illustrator</span><br>inside PowerPoint</h1>
-  <p class="hero-sub">Professional design tools — alignment, shapes, tables, colors, typography — all inside PowerPoint as a one-click add-in.</p>
+  <p class="hero-sub">Fill, border, corner radius, SVG shapes and bulk color replace — all live inside PowerPoint as a one-click add-in.</p>
   <div class="cta-row">
     <a href="#install" class="btn-primary">⬇ Install Now</a>
     <a href="#features" class="btn-secondary">See Features →</a>
   </div>
 </section>
+
 <section class="section-wrap" id="features">
   <div class="section-label">What's inside</div>
   <div class="section-title">Everything you need</div>
   <div class="features-grid">
-    <div class="feature-card"><div class="feature-icon" style="background:rgba(91,110,245,0.15)">⬛</div><h3>Smart Alignment</h3><p>Align and distribute shapes — left, center, right, top, middle, bottom. Match size across shapes.</p></div>
-    <div class="feature-card"><div class="feature-icon" style="background:rgba(167,139,250,0.15)">◉</div><h3>Shape Control</h3><p>Corner radius, opacity, fill, border — all live. Insert SVG icons directly into slides.</p></div>
-    <div class="feature-card"><div class="feature-icon" style="background:rgba(244,114,182,0.15)">▦</div><h3>Table Designer</h3><p>Professional tables with custom headers, alternating rows, font control — save templates.</p></div>
-    <div class="feature-card"><div class="feature-icon" style="background:rgba(52,211,153,0.15)">T</div><h3>Typography Panel</h3><p>InDesign-style character control — font, size, leading, tracking, baseline, paragraph styles.</p></div>
-    <div class="feature-card"><div class="feature-icon" style="background:rgba(251,191,36,0.15)">🎨</div><h3>Color Palette</h3><p>Save brand colors and apply with one click. Bulk replace colors across the slide.</p></div>
-    <div class="feature-card"><div class="feature-icon" style="background:rgba(248,113,113,0.15)">⊞</div><h3>Canvas Tools</h3><p>Illustrator-style grid and guides for precise infographic layout work.</p></div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(91,110,245,0.15)">🎨</div>
+      <h3>Fill & Opacity</h3>
+      <p>Apply solid fill colors live with a color picker and hex input. Control transparency with an opacity slider in real time.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(167,139,250,0.15)">⬜</div>
+      <h3>Border Control</h3>
+      <p>Set border color via color picker or hex input. Control border width live with a slider — from 0 to 20pt.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(244,114,182,0.15)">◉</div>
+      <h3>Corner Radius</h3>
+      <p>Convert any shape to Round Rectangle with one click, then control the corner radius live with a slider.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(52,211,153,0.15)">✦</div>
+      <h3>SVG Library</h3>
+      <p>Paste SVG code and insert it directly into your slide as an editable shape. Save SVGs to your personal library for quick reuse.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(251,191,36,0.15)">🔄</div>
+      <h3>Bulk Color Replace</h3>
+      <p>Replace any color across all shapes on the current slide instantly. Use "Read from Shape" to pick the color directly.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(248,113,113,0.15)">⚡</div>
+      <h3>Live Controls</h3>
+      <p>All sliders and color pickers apply changes in real time — no need to click Apply. Just select a shape and start designing.</p>
+    </div>
   </div>
 </section>
+
 <section class="install-wrap" id="install">
   <div class="section-label">Installation</div>
   <div class="section-title">Choose your system</div>
@@ -177,6 +212,7 @@
     </div>
   </div>
 </section>
+
 <section class="install-wrap" id="updates">
   <div class="update-card">
     <div class="update-icon">🔄</div>
@@ -188,6 +224,7 @@
     </div>
   </div>
 </section>
+
 <section class="install-wrap">
   <div class="download-card">
     <h2>Ready to start?</h2>
@@ -195,7 +232,27 @@
     <a href="#install" class="btn-primary" style="display:inline-flex">⬇ Install Now</a>
   </div>
 </section>
-<footer>Made by Osama — PowerPoint Add-in for Infographic Designers &nbsp;·&nbsp; <a href="https://github.com/engosama102-ui/osama-addin" target="_blank" style="color:#818cf8;text-decoration:none">GitHub</a></footer>
+
+<section class="install-wrap" id="contact">
+  <div class="contact-card">
+    <h3>Contact & Support</h3>
+    <p>Have a question or need help? Reach out directly.</p>
+    <div class="contact-links">
+      <a href="mailto:engosama102@gmail.com" class="contact-link email">
+        📧 engosama102@gmail.com
+      </a>
+      <a href="https://wa.me/201014031211" target="_blank" class="contact-link whatsapp">
+        💬 WhatsApp: +201014031211
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Made by Osama — PowerPoint Add-in for Infographic Designers &nbsp;·&nbsp;
+  <a href="https://github.com/engosama102-ui/osama-addin" target="_blank" style="color:#818cf8;text-decoration:none">GitHub</a>
+</footer>
+
 <script>
 function switchOS(os) {
   document.getElementById('panel-win').classList.remove('active');
