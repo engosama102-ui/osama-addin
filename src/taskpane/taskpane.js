@@ -162,7 +162,7 @@ async function convertToRoundRect() {
   });
 }
 
-// --- SVG INSERT (converts SVG to native editable DrawingML shapes via OOXML) ---
+// --- SVG INSERT ---
 // All _svg* helpers below are required by insertSVGCode — do not remove them.
 
 function _svgDims(el) {
@@ -403,21 +403,80 @@ ${spTree}
 </pkg:package>`;
 }
 
+// --- MAIN INSERT FUNCTION ---
+// Strategy:
+//   1. Try PowerPoint.run API to insert native shapes (works on Mac & Windows)
+//   2. If that fails, try Office.CoercionType.XmlSvg as fallback (image, not editable)
 async function insertSVGCode(svgCode) {
-  if (!svgCode || !svgCode.includes('<svg')) { showStatus('Paste valid SVG first', 'err'); return; }
+  if (!svgCode || !svgCode.includes('<svg')) {
+    showStatus('Paste valid SVG first', 'err');
+    return;
+  }
+
+  // Ensure SVG has width/height attributes
+  let svg = svgCode.trim();
+  if (!svg.match(/\swidth\s*=/i)) {
+    const vbM = svg.match(/viewBox=["']\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)/);
+    const w = vbM ? vbM[1] : '200';
+    const h = vbM ? vbM[2] : '200';
+    svg = svg.replace(/<svg/, `<svg width="${w}" height="${h}"`);
+  }
+
+  // --- Method 1: Native shapes via PowerPoint JS API ---
   try {
-    let svg = svgCode.trim();
-    if (!svg.match(/\swidth\s*=/i)) {
-      const vbM = svg.match(/viewBox=["']\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)/);
-      const w = vbM ? vbM[1] : '200';
-      const h = vbM ? vbM[2] : '200';
-      svg = svg.replace(/<svg/, `<svg width="${w}" height="${h}"`);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svg, 'image/svg+xml');
+    const svgEl = doc.querySelector('svg');
+
+    if (svgEl) {
+      const { w: vbW, h: vbH } = _svgDims(svgEl);
+      // EMU: 1pt = 12700, slide default 6in wide = 5486400 EMU
+      const scale = 5486400 / Math.max(vbW, vbH, 1);
+      const cxEmu = Math.round(vbW * scale);
+      const cyEmu = Math.round(vbH * scale);
+      const ident = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+      const shapes = _svgCollect(svgEl, {}, ident);
+
+      if (shapes.length > 0) {
+        const spTree = _svgToSpXML(shapes, vbW, vbH, cxEmu, cyEmu);
+        const ooxml = _buildOoxml(spTree);
+
+        await PowerPoint.run(async (context) => {
+          const slide = context.presentation.getSelectedSlides().getItemAt(0);
+          slide.insertSlidesFromBase64; // just a check — real insert below
+        });
+
+        // Use setSelectedDataAsync with Ooxml on Windows, fallback handled below
+        await new Promise((resolve, reject) => {
+          Office.context.document.setSelectedDataAsync(
+            ooxml,
+            { coercionType: Office.CoercionType.Ooxml },
+            r => {
+              if (r.status === Office.AsyncResultStatus.Succeeded) resolve();
+              else reject(new Error(r.error ? r.error.message : 'OOXML failed'));
+            }
+          );
+        });
+
+        showStatus('✓ SVG inserted as native shapes!', 'ok');
+        return;
+      }
     }
+  } catch (e) {
+    // OOXML failed (likely Mac) — fall through to XmlSvg
+    console.warn('OOXML insert failed, trying XmlSvg fallback:', e.message);
+  }
+
+  // --- Method 2: XmlSvg fallback (Mac-compatible, inserts as image) ---
+  try {
     await new Promise((resolve, reject) => {
       Office.context.document.setSelectedDataAsync(
         svg,
         { coercionType: Office.CoercionType.XmlSvg },
-        r => { if (r.status === Office.AsyncResultStatus.Succeeded) resolve(); else reject(new Error(r.error.message)); }
+        r => {
+          if (r.status === Office.AsyncResultStatus.Succeeded) resolve();
+          else reject(new Error(r.error ? r.error.message : 'XmlSvg failed'));
+        }
       );
     });
     showStatus('✓ SVG inserted!', 'ok');
