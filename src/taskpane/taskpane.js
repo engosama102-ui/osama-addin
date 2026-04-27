@@ -485,7 +485,7 @@ function buildShapesOoxml(spTreeContent) {
 </pkg:package>`;
 }
 
-aasync function insertSVGCode(svgCode) {
+async function insertSVGCode(svgCode) {
   if (!svgCode || !svgCode.includes('<svg')) {
     showStatus('Paste valid SVG first', 'err');
     return;
