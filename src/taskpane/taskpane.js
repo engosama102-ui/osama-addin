@@ -492,9 +492,46 @@ async function insertSVGCode(svgCode) {
   }
 }
 
+// --- IMPROVED INSERT WITH VALIDATION ---
 async function insertSVGToSlide() {
   const code = document.getElementById('svg-input').value.trim();
-  if (!code) { showStatus('Paste SVG code first', 'err'); return; }
+  
+  // Check for empty textarea
+  if (!code) {
+    showStatus('❌ Paste SVG code first', 'err');
+    return;
+  }
+  
+  // Check for required SVG tags
+  if (!code.includes('<svg')) {
+    showStatus('❌ Error: Missing <svg> tag', 'err');
+    return;
+  }
+  
+  if (!code.includes('</svg>')) {
+    showStatus('❌ Error: Missing closing </svg> tag', 'err');
+    return;
+  }
+  
+  // Validate SVG syntax with DOMParser
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(code, 'image/svg+xml');
+    
+    // Check for parse errors
+    if (doc.getElementsByTagName('parsererror').length > 0) {
+      showStatus('❌ Error: SVG has syntax errors - check your code', 'err');
+      console.error('SVG Parse Error:', doc.getElementsByTagName('parsererror')[0].textContent);
+      return;
+    }
+  } catch (e) {
+    showStatus('❌ Error: Invalid SVG format', 'err');
+    console.error('SVG Validation Error:', e.message);
+    return;
+  }
+  
+  // If validation passes, insert
+  showStatus('⏳ Inserting SVG...', 'ok');
   await insertSVGCode(code);
 }
 
