@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Osama Addin — PowerPoint Design Tool</title>
+  <title>Osama Addin — PowerPoint Design Tool for Mac</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
   <style>
     :root {
@@ -38,12 +38,6 @@
     .feature-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 16px; }
     .feature-card h3 { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 8px; }
     .feature-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
-    .os-tabs { display: flex; gap: 8px; margin-bottom: 24px; justify-content: center; }
-    .os-tab { display: flex; align-items: center; gap: 8px; padding: 10px 24px; border-radius: 10px; cursor: pointer; border: 1px solid var(--border); background: var(--surface); font-family: 'Syne', sans-serif; font-weight: 600; font-size: 14px; color: var(--muted); transition: all 0.2s; }
-    .os-tab.active-win { background: rgba(0,120,212,0.15); border-color: rgba(0,120,212,0.4); color: #60aaff; }
-    .os-tab.active-mac { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); color: var(--text); }
-    .os-panel { display: none; }
-    .os-panel.active { display: block; }
     .steps-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
     .steps-card h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; margin-bottom: 24px; }
     .step { display: flex; gap: 16px; align-items: flex-start; padding-bottom: 24px; position: relative; }
@@ -57,6 +51,7 @@
     .copy-btn.copied { background: rgba(52,211,153,0.2); color: #34d399; border-color: rgba(52,211,153,0.3); }
     .note-box { margin-top: 10px; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #fbbf24; line-height: 1.6; }
     .success-box { margin-top: 10px; background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #34d399; line-height: 1.6; }
+    .mac-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 16px; font-size: 13px; color: var(--muted); margin-bottom: 24px; }
     .update-card { background: var(--surface); border: 1px solid rgba(52,211,153,0.2); border-radius: 20px; padding: 32px; display: flex; gap: 24px; align-items: flex-start; }
     .update-icon { width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0; background: rgba(52,211,153,0.15); display: flex; align-items: center; justify-content: center; font-size: 22px; }
     .update-content h3 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
@@ -87,9 +82,9 @@
 </nav>
 
 <section class="hero">
-  <div class="hero-tag">Free PowerPoint Tool</div>
-  <h1>Design like<br><span>Illustrator</span><br>inside PowerPoint</h1>
-  <p class="hero-sub">Fill, border, corner radius, SVG shapes and bulk color replace — all live inside PowerPoint as a one-click add-in.</p>
+  <div class="hero-tag">Free PowerPoint Tool — Mac Only</div>
+  <h1>Design faster<br><span>inside PowerPoint</span></h1>
+  <p class="hero-sub">Live fill, border, corner radius, SVG library and bulk color replace — all in one free add-in for Mac.</p>
   <div class="cta-row">
     <a href="#install" class="btn-primary">⬇ Install Now</a>
     <a href="#features" class="btn-secondary">See Features →</a>
@@ -135,79 +130,37 @@
 
 <section class="install-wrap" id="install">
   <div class="section-label">Installation</div>
-  <div class="section-title">Choose your system</div>
-  <div class="os-tabs">
-    <div class="os-tab active-win" id="tab-win" onclick="switchOS('win')"><span>🪟</span> Windows</div>
-    <div class="os-tab" id="tab-mac" onclick="switchOS('mac')"><span>🍎</span> Mac</div>
-  </div>
-  <div class="os-panel active" id="panel-win">
-    <div class="steps-card">
-      <h3>🪟 Windows Installation</h3>
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-content">
-          <h4>Download the manifest file</h4>
-          <p>Click below to download the <strong>manifest.xml</strong> file. Save it anywhere on your computer.</p>
-          <a href="manifest.xml" download class="btn-primary" style="display:inline-flex;margin-top:10px;font-size:13px;padding:10px 20px">⬇ Download manifest.xml</a>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-content">
-          <h4>Open PowerPoint → Insert</h4>
-          <p>Click <strong>Insert</strong> from the top menu bar</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-content">
-          <h4>Get Add-ins → My Add-ins</h4>
-          <p>Click <strong>Get Add-ins</strong> → click the <strong>My Add-ins</strong> tab at the top of the window</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div class="step-content">
-          <h4>Upload My Add-in</h4>
-          <p>Click <strong>Upload My Add-in</strong> → select the <strong>manifest.xml</strong> file you downloaded</p>
-          <div class="success-box">✓ The add-in will appear in your Home tab immediately — ready to use!</div>
-        </div>
+  <div class="section-title">🍎 Mac — One command, done forever</div>
+  <div class="steps-card">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Close PowerPoint first</h4>
+        <p>Make sure PowerPoint is completely closed before continuing</p>
       </div>
     </div>
-  </div>
-  <div class="os-panel" id="panel-mac">
-    <div class="steps-card">
-      <h3>🍎 Mac Installation</h3>
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-content">
-          <h4>Close PowerPoint first</h4>
-          <p>Make sure PowerPoint is completely closed before continuing</p>
-        </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Open Terminal</h4>
+        <p>Press <strong>Cmd + Space</strong> → type <strong>Terminal</strong> → press Enter</p>
       </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-content">
-          <h4>Open Terminal</h4>
-          <p>Press <strong>Cmd + Space</strong> → type <strong>Terminal</strong> → press Enter</p>
-        </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Run this one command</h4>
+        <p>Copy the command below, paste it in Terminal, and press Enter:</p>
+        <div class="code-block" id="mac-cmd">mkdir -p ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef && curl -o ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef/manifest.xml https://engosama102-ui.github.io/osama-addin/manifest.xml<button class="copy-btn" onclick="copyCmd('mac-cmd',this)">Copy</button></div>
+        <div class="note-box">⚠️ This command only needs to be run once — ever. Updates happen automatically after that.</div>
       </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-content">
-          <h4>Run this one command</h4>
-          <p>Copy the command below, paste it in Terminal, and press Enter:</p>
-          <div class="code-block" id="mac-cmd">mkdir -p ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef && curl -o ~/Library/Containers/com.microsoft.Powerpoint/Data/Documents/wef/manifest.xml https://engosama102-ui.github.io/osama-addin/manifest.xml<button class="copy-btn" onclick="copyCmd('mac-cmd',this)">Copy</button></div>
-          <div class="note-box">⚠️ This command only needs to be run once — ever. Updates happen automatically after that.</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div class="step-content">
-          <h4>Open PowerPoint</h4>
-          <p>Open PowerPoint → you will find <strong>Osama Addin</strong> in the <strong>Add-ins</strong> tab in the top menu</p>
-          <div class="success-box">✓ Done! Installed permanently — no Terminal needed again.</div>
-        </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>Open PowerPoint</h4>
+        <p>Open PowerPoint → you will find <strong>Osama Addin</strong> in the <strong>Add-ins</strong> tab in the top menu</p>
+        <div class="success-box">✓ Done! Installed permanently — no Terminal needed again.</div>
       </div>
     </div>
   </div>
@@ -228,7 +181,7 @@
 <section class="install-wrap">
   <div class="download-card">
     <h2>Ready to start?</h2>
-    <p>Free, no account needed. Works on PowerPoint for Windows and Mac.</p>
+    <p>Free, no account needed. Mac only.</p>
     <a href="#install" class="btn-primary" style="display:inline-flex">⬇ Install Now</a>
   </div>
 </section>
@@ -238,12 +191,8 @@
     <h3>Contact & Support</h3>
     <p>Have a question or need help? Reach out directly.</p>
     <div class="contact-links">
-      <a href="mailto:engosama102@gmail.com" class="contact-link email">
-        📧 engosama102@gmail.com
-      </a>
-      <a href="https://wa.me/201014031211" target="_blank" class="contact-link whatsapp">
-        💬 WhatsApp: +201014031211
-      </a>
+      <a href="mailto:engosama102@gmail.com" class="contact-link email">📧 engosama102@gmail.com</a>
+      <a href="https://wa.me/201014031211" target="_blank" class="contact-link whatsapp">💬 WhatsApp: +201014031211</a>
     </div>
   </div>
 </section>
@@ -254,14 +203,6 @@
 </footer>
 
 <script>
-function switchOS(os) {
-  document.getElementById('panel-win').classList.remove('active');
-  document.getElementById('panel-mac').classList.remove('active');
-  document.getElementById('tab-win').className = 'os-tab';
-  document.getElementById('tab-mac').className = 'os-tab';
-  document.getElementById('panel-' + os).classList.add('active');
-  document.getElementById('tab-' + os).className = 'os-tab active-' + os;
-}
 function copyCmd(id, btn) {
   const el = document.getElementById(id);
   const text = el.childNodes[0].textContent.trim();
